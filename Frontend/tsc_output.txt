@@ -1,0 +1,16 @@
+﻿src/app/about/page.tsx(1,19): error TS2307: Cannot find module '../../pages/About' or its corresponding type declarations.
+src/app/add-resource/page.tsx(1,25): error TS2307: Cannot find module '../../pages/AddResource' or its corresponding type declarations.
+src/app/categories/page.tsx(1,24): error TS2307: Cannot find module '../../pages/Categories' or its corresponding type declarations.
+src/app/contact/page.tsx(1,21): error TS2307: Cannot find module '../../pages/Contact' or its corresponding type declarations.
+src/app/formations/page.tsx(1,24): error TS2307: Cannot find module '../../pages/Formations' or its corresponding type declarations.
+src/app/home/page.tsx(1,18): error TS2307: Cannot find module '../../pages/Home' or its corresponding type declarations.
+src/app/page.tsx(1,19): error TS2307: Cannot find module '../pages/Login' or its corresponding type declarations.
+src/app/public-resources/page.tsx(1,29): error TS2307: Cannot find module '../../pages/PublicResources' or its corresponding type declarations.
+src/app/quiz/[id]/page.tsx(1,18): error TS2307: Cannot find module '../../../pages/Quiz' or its corresponding type declarations.
+src/app/resources/page.tsx(1,23): error TS2307: Cannot find module '../../pages/Resources' or its corresponding type declarations.
+src/app/signup/page.tsx(1,20): error TS2307: Cannot find module '../../pages/SignUp' or its corresponding type declarations.
+src/app/student/page.tsx(1,30): error TS2307: Cannot find module '../../pages/StudentDashboard' or its corresponding type declarations.
+src/app/super-admin/page.tsx(1,33): error TS2307: Cannot find module '../../pages/SuperAdminDashboard' or its corresponding type declarations.
+src/app/teacher/page.tsx(1,30): error TS2307: Cannot find module '../../pages/TeacherDashboard' or its corresponding type declarations.
+vite.config.ts(3,25): error TS2307: Cannot find module '@tailwindcss/vite' or its corresponding type declarations.
+  There are types at 'C:/Users/asus/Desktop/Edushare2/node_modules/@tailwindcss/vite/dist/index.d.mts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.

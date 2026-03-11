@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Thème EduShare — Tailwind v4
+   ============================================================ */
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 221 83% 53%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 210 40% 96%;
+        --accent-foreground: 222 47% 11%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 221 83% 53%;
+        --radius: 0.5rem;
+    }
+
+    body {
+        background-color: #ffffff;
+        color: #111827;
+    }
+
+    /* Enforce pointer cursor globally */
+    button,
+    [role="button"],
+    [role="option"],
+    [role="menuitem"],
+    [data-slot="select-trigger"],
+    input[type="submit"],
+    input[type="button"] {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [aria-disabled="true"] {
+        cursor: not-allowed;
+    }
+}
+
+/* ============================================================
+   Inputs et Selects — style "filled" (fond gris clair)
+   Surcharge explicite pour toute l'app
+   ============================================================ */
+@layer components {
+    input[data-slot="input"] {
+        background-color: #f3f4f6;
+        /* gray-100 */
+        border: none;
+        border-radius: 0.5rem;
+        height: 2.5rem;
+        padding: 0 0.75rem;
+        font-size: 0.875rem;
+        color: #111827;
+        transition: background-color 0.15s, box-shadow 0.15s;
+        outline: none;
+        width: 100%;
+    }
+
+    input[data-slot="input"]::placeholder {
+        color: #9ca3af;
+        /* gray-400 */
+    }
+
+    input[data-slot="input"]:focus-visible {
+        background-color: #ffffff;
+        box-shadow: 0 0 0 2px #bfdbfe;
+        /* blue-200 ring */
+    }
+
+    button[data-slot="select-trigger"] {
+        background-color: #f3f4f6;
+        /* gray-100 */
+        border: none;
+        border-radius: 0.5rem;
+        height: 2.5rem;
+        padding: 0 0.75rem;
+        font-size: 0.875rem;
+        color: #111827;
+        transition: background-color 0.15s, box-shadow 0.15s;
+        outline: none;
+        width: 100%;
+    }
+
+    button[data-slot="select-trigger"]:focus-visible {
+        background-color: #ffffff;
+        box-shadow: 0 0 0 2px #bfdbfe;
+    }
+}
