@@ -20,6 +20,7 @@ import {
   FileType,
   GraduationCap,
   Layers,
+  HelpCircle,
 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -92,6 +93,7 @@ export function Layout({ children, role, onSearch }: LayoutProps) {
           { icon: Home, label: 'Tableau de bord', path: '/teacher' },
           { icon: BookOpen, label: 'Mes ressources', path: '/teacher/resources' },
           { icon: PlusCircle, label: 'Ajouter une ressource', path: '/add-resource' },
+          { icon: HelpCircle, label: 'Mes Quiz', path: '/teacher/quiz' },
           { icon: FolderOpen, label: 'Catégories', path: '/teacher/categories' },
           { icon: Users, label: 'Mes apprenants', path: '/teacher/students' },
         ];
@@ -100,6 +102,7 @@ export function Layout({ children, role, onSearch }: LayoutProps) {
           { icon: Home, label: 'Tableau de bord', path: '/student' },
           { icon: FolderOpen, label: 'Catégories', path: '/student/categories' },
           { icon: BookOpen, label: 'Ressources', path: '/student/resources' },
+          { icon: HelpCircle, label: 'Quiz disponibles', path: '/student/quiz' },
         ];
       default:
         return [];

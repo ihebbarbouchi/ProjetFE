@@ -7,9 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
-} from '../components/ui/dialog';
+import { Modal, ModalHeader, ModalBody, ModalFooter, ModalConfirmButton, ModalCancelButton } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import {
@@ -331,193 +329,93 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Modal de Détails Utilisateur / Documents */}
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="max-w-2xl bg-white p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+        <Modal open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+            <ModalHeader onClose={() => setIsDetailsOpen(false)}>
+                Dossier de {selectedUser?.nom}
+            </ModalHeader>
+            <ModalBody>
             {selectedUser && (
-              <>
-                {/* Header avec dégradé subtil aux couleurs du dashboard */}
-                <div className="bg-gradient-to-br from-violet-600 to-indigo-700 p-8 text-white relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <UserIcon className="w-32 h-32 -mr-16 -mt-16" />
+              <div className="space-y-6">
+                  {/* Profil rapide */}
+                  <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                          <UserIcon className="w-8 h-8 text-blue-600" />
+                      </div>
+                      <div>
+                          <h3 className="text-xl font-bold text-gray-900">{selectedUser.nom}</h3>
+                          <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline">
+                                  {selectedUser.role === 'teacher' ? 'Enseignant' : 'Apprenant'}
+                              </Badge>
+                              <Badge className={selectedUser.statut === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
+                                  {selectedUser.statut === 'active' ? 'Approuvé' : 'En attente'}
+                              </Badge>
+                          </div>
+                      </div>
                   </div>
 
-                  <div className="flex items-center gap-5 relative z-10">
-                    <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30 shadow-xl">
-                      <UserIcon className="w-10 h-10 text-white" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-3xl font-extrabold text-white mb-2 tracking-tight">
-                        Dossier de {selectedUser.nom}
-                      </DialogTitle>
-                      <div className="flex items-center gap-3">
-                        <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm px-3 py-1">
-                          {selectedUser.role === 'teacher' ? 'Enseignant' : 'Apprenant'}
-                        </Badge>
-                        <Badge className={`${selectedUser.statut === 'active' ? 'bg-emerald-400' : 'bg-amber-400'} text-gray-900 border-none font-bold px-3 py-1`}>
-                          {selectedUser.statut === 'active' ? 'Approuvé' : 'En attente'}
-                        </Badge>
+                  {/* Informations detaillées */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                      <div className="space-y-1">
+                          <span className="text-sm text-gray-500">Téléphone</span>
+                          <p className="font-medium text-gray-900 flex items-center gap-2">
+                              <Smartphone className="w-4 h-4 text-gray-400" />
+                              {selectedUser.telephone || 'Non renseigné'}
+                          </p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-8 bg-gray-50/50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {/* Informations de Contact */}
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
-                      <h4 className="text-xs font-bold text-violet-600 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-600"></span>
-                        Informations de contact
-                      </h4>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-4 group">
-                          <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all">
-                            <Smartphone className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Téléphone</p>
-                            <p className="font-bold text-gray-900">{selectedUser.telephone || 'Non renseigné'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 group">
-                          <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Email professionnel</p>
-                            <p className="font-bold text-gray-900">{selectedUser.email}</p>
-                          </div>
-                        </div>
+                      <div className="space-y-1">
+                          <span className="text-sm text-gray-500">Institution</span>
+                          <p className="font-medium text-gray-900 flex items-center gap-2">
+                              <Building className="w-4 h-4 text-gray-400" />
+                              {selectedUser.institution || 'Non renseignée'}
+                          </p>
                       </div>
-                    </div>
-
-                    {/* Profil Professionnel */}
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
-                      <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                        Profil Professionnel
-                      </h4>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-4 group">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                            <Briefcase className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Poste actuel</p>
-                            <p className="font-bold text-gray-900">{selectedUser.poste_actuel || 'Professeur'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 group">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                            <Building className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Institution</p>
-                            <p className="font-bold text-gray-900">{selectedUser.institution || 'ISET'}</p>
-                          </div>
-                        </div>
+                      <div className="space-y-1">
+                          <span className="text-sm text-gray-500">Poste actuel</span>
+                          <p className="font-medium text-gray-900 flex items-center gap-2">
+                              <Briefcase className="w-4 h-4 text-gray-400" />
+                              {selectedUser.poste_actuel || 'Non renseigné'}
+                          </p>
                       </div>
-                    </div>
                   </div>
 
                   {/* Pièces Justificatives */}
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pièces Justificatives</h4>
-                      <Badge variant="outline" className="text-[10px] font-bold border-gray-200 text-gray-400">
-                        {(selectedUser.cv_path ? 1 : 0) + (selectedUser.motivation_path ? 1 : 0) + (selectedUser.cin_path ? 1 : 0)} / 3 Documents
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {selectedUser.cv_path ? (
-                        <a
-                          href={`http://localhost:8000/storage/${selectedUser.cv_path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-violet-600 hover:shadow-md transition-all text-center relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 w-2 h-full bg-violet-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <FileText className="w-6 h-6 text-violet-600" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-900">Curriculum Vitae</p>
-                          <p className="text-[10px] text-gray-400 mt-1 font-medium">Format PDF / DOC</p>
-                        </a>
-                      ) : (
-                        <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center opacity-60">
-                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                            <FileText className="w-6 h-6 text-gray-300" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-400 italic">CV non disponible</p>
-                        </div>
-                      )}
-
-                      {selectedUser.motivation_path ? (
-                        <a
-                          href={`http://localhost:8000/storage/${selectedUser.motivation_path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-indigo-600 hover:shadow-md transition-all text-center relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 w-2 h-full bg-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <FileText className="w-6 h-6 text-indigo-600" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-900">Lettre de Motiv.</p>
-                          <p className="text-[10px] text-gray-400 mt-1 font-medium">Format PDF / DOC</p>
-                        </a>
-                      ) : (
-                        <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center opacity-60">
-                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                            <FileText className="w-6 h-6 text-gray-300" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-400 italic">Lettre non dispo.</p>
-                        </div>
-                      )}
-
-                      {selectedUser.cin_path ? (
-                        <a
-                          href={`http://localhost:8000/storage/${selectedUser.cin_path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-emerald-600 hover:shadow-md transition-all text-center relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 w-2 h-full bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <ShieldCheck className="w-6 h-6 text-emerald-600" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-900">Pièce d'Identité</p>
-                          <p className="text-[10px] text-gray-400 mt-1 font-medium">Passeport / CIN</p>
-                        </a>
-                      ) : (
-                        <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center opacity-60">
-                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                            <ShieldCheck className="w-6 h-6 text-gray-300" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-400 italic">CIN non disponible</p>
-                        </div>
-                      )}
-                    </div>
+                  <div className="space-y-3 pt-4 border-t border-gray-100">
+                      <h4 className="font-semibold text-gray-900">Pièces Justificatives</h4>
+                      <div className="space-y-2">
+                          {selectedUser.cv_path && (
+                              <a href={`http://localhost:8000/storage/${selectedUser.cv_path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                  <FileText className="w-5 h-5 text-gray-400" />
+                                  <span className="text-sm font-medium text-gray-700">Curriculum Vitae</span>
+                              </a>
+                          )}
+                          {selectedUser.motivation_path && (
+                              <a href={`http://localhost:8000/storage/${selectedUser.motivation_path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                  <FileText className="w-5 h-5 text-gray-400" />
+                                  <span className="text-sm font-medium text-gray-700">Lettre de Motivation</span>
+                              </a>
+                          )}
+                          {selectedUser.cin_path && (
+                              <a href={`http://localhost:8000/storage/${selectedUser.cin_path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                  <ShieldCheck className="w-5 h-5 text-gray-400" />
+                                  <span className="text-sm font-medium text-gray-700">Pièce d'Identité</span>
+                              </a>
+                          )}
+                          {(!selectedUser.cv_path && !selectedUser.motivation_path && !selectedUser.cin_path) && (
+                              <p className="text-sm text-gray-500 italic">Aucun document fourni.</p>
+                          )}
+                      </div>
                   </div>
-
-                  <div className="mt-10 flex border-t border-gray-100 pt-6">
-                    <Button
-                      onClick={() => setIsDetailsOpen(false)}
-                      className="ml-auto bg-gray-900 hover:bg-black text-white px-10 rounded-2xl font-bold h-12 shadow-lg transition-transform active:scale-95"
-                    >
-                      Fermer le dossier
-                    </Button>
-                  </div>
-                </div>
-              </>
+              </div>
             )}
-          </DialogContent>
-        </Dialog>
+            </ModalBody>
+            <ModalFooter>
+              <ModalCancelButton onClick={() => setIsDetailsOpen(false)}>
+                Fermer
+              </ModalCancelButton>
+            </ModalFooter>
+        </Modal>
       </div>
     </Layout>
   );

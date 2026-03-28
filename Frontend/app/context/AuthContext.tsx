@@ -19,6 +19,7 @@ interface User {
   pays?: string;
   poste_actuel?: string;
   institution?: string;
+  created_at?: string;
 }
 
 interface AuthContextType {

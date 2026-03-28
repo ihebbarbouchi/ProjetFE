@@ -10,13 +10,13 @@ import { Label } from '../../components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { toast } from 'sonner';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '../../components/ui/dialog';
+    Modal,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    ModalCancelButton,
+    ModalConfirmButton,
+} from '../../components/ui/modal';
 import {
     Select,
     SelectContent,
@@ -24,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../components/ui/select';
-import { Users, UserCheck, GraduationCap, Search, Plus, Trash2, ShieldCheck, Loader2, AlertCircle, Clock, CheckCircle, XCircle, Eye, Edit, FileText, Smartphone, Building, User as UserIcon, Paperclip, Briefcase } from 'lucide-react';
+import { Users, UserCheck, GraduationCap, Search, Plus, Trash2, ShieldCheck, Loader2, AlertCircle, Clock, CheckCircle, XCircle, Eye, Edit, FileText, Smartphone, Building, User as UserIcon, Paperclip, Briefcase, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
@@ -339,119 +339,99 @@ export default function UserManagement() {
                         <p className="text-gray-600 mt-1">Gérez les apprenants et les enseignants de la plateforme</p>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={fetchUsers} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Actualiser
+
+                        <Button
+                            onClick={() => {
+                                setEditUser(null);
+                                setNewNom('');
+                                setNewPrenom('');
+                                setNewEmail('');
+                                setNewPassword('');
+                                setNewRole('student');
+                                setIsAddOpen(true);
+                            }}
+                            className="bg-gray-700 hover:bg-gray-800 text-white cursor-pointer"
+                        >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Ajouter un utilisateur
                         </Button>
-                        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                            <DialogTrigger asChild>
-                                <Button 
-                                    className="bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all hover:scale-[1.02] active:scale-95 px-6 h-11 rounded-2xl font-bold flex items-center gap-2"
-                                    onClick={() => {
-                                        setEditUser(null);
-                                        setNewNom('');
-                                        setNewPrenom('');
-                                        setNewEmail('');
-                                        setNewPassword('');
-                                        setNewRole('student');
-                                        setIsAddOpen(true);
-                                    }}
-                                >
-                                    <Plus className="w-5 h-5" /> Ajouter un utilisateur
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md bg-white p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-                                <div className="bg-gradient-to-br from-violet-600 to-indigo-700 p-8 text-white relative">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <Users className="w-24 h-24 -mr-8 -mt-8" />
-                                    </div>
-                                    <DialogHeader>
-                                        <DialogTitle className="text-2xl font-bold text-white">
-                                            {editUser ? 'Modifier l\'utilisateur' : 'Ajouter un utilisateur'}
-                                        </DialogTitle>
-                                        <DialogDescription className="text-violet-100 opacity-90 text-base mt-1">
-                                            {editUser ? 'Mettre à jour les informations du compte' : 'Créer un nouveau compte pour la plateforme'}
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                </div>
-                                <div className="p-8 space-y-5 bg-gray-50/50">
-                                    {/* Nom + Prénom côte à côte */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="add-user-nom" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Nom</Label>
-                                            <Input
-                                                id="add-user-nom"
-                                                placeholder="Dupont"
-                                                value={newNom}
-                                                onChange={(e) => setNewNom(e.target.value)}
-                                                className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="add-user-prenom" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Prénom</Label>
-                                            <Input
-                                                id="add-user-prenom"
-                                                placeholder="Jean"
-                                                value={newPrenom}
-                                                onChange={(e) => setNewPrenom(e.target.value)}
-                                                className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                            />
-                                        </div>
-                                    </div>
-                                    {/* Email */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="add-user-email" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Adresse e-mail</Label>
-                                        <Input
-                                            id="add-user-email"
-                                            type="email"
-                                            placeholder="jean.dupont@example.com"
-                                            value={newEmail}
-                                            onChange={(e) => setNewEmail(e.target.value)}
-                                            className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                        />
-                                    </div>
-                                    {/* Mot de passe */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="add-user-password" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-                                            {editUser ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe'}
-                                        </Label>
-                                        <Input
-                                            id="add-user-password"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                        />
-                                    </div>
-                                    {/* Rôle */}
-                                    <div className={`space-y-2 transition-all duration-300 ${isSelectOpen ? 'mb-28' : 'mb-0'}`}>
-                                        <Label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Rôle utilisateur</Label>
-                                        <Select value={newRole} onValueChange={(v) => setNewRole(v as User['role'])} open={isSelectOpen} onOpenChange={setIsSelectOpen}>
-                                            <SelectTrigger className="h-12 bg-white border-gray-100 rounded-2xl focus:ring-violet-500 shadow-sm font-medium"><SelectValue /></SelectTrigger>
-                                            <SelectContent position="popper" sideOffset={8} className="z-[100] bg-white border border-gray-100 shadow-2xl rounded-2xl min-w-[var(--radix-select-trigger-width)]">
-                                                <SelectItem value="student" className="py-3 px-4 focus:bg-violet-50 cursor-pointer rounded-xl">Apprenant</SelectItem>
-                                                <SelectItem value="teacher" className="py-3 px-4 focus:bg-violet-50 cursor-pointer rounded-xl">Enseignant</SelectItem>
-                                                <SelectItem value="super-admin" className="py-3 px-4 focus:bg-violet-50 cursor-pointer rounded-xl text-violet-600 font-bold">Administrateur</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    {/* Bouton confirmer */}
-                                    <div className="pt-2">
-                                        <Button
-                                            onClick={editUser ? handleEdit : handleAdd}
-                                            className="w-full bg-violet-600 hover:bg-violet-700 h-14 text-lg font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-xl shadow-violet-200 flex items-center justify-center gap-2 rounded-2xl"
-                                            disabled={!newNom.trim() || !newPrenom.trim() || !newEmail.trim() || (!editUser && !newPassword.trim()) || isAdding}
-                                        >
-                                            {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-                                            {isAdding ? (editUser ? 'Mise à jour...' : 'Création en cours...') : (editUser ? 'Mettre à jour le compte' : 'Créer le compte')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
                     </div>
                 </div>
+
+                {/* Modal Ajouter/Modifier Utilisateur */}
+                <Modal open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <ModalHeader onClose={() => setIsAddOpen(false)}>
+                        {editUser ? 'Modifier l\'utilisateur' : 'Ajouter un utilisateur'}
+                    </ModalHeader>
+                    <ModalBody>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="add-user-nom">Nom</Label>
+                                    <Input
+                                        id="add-user-nom"
+                                        placeholder="Dupont"
+                                        value={newNom}
+                                        onChange={(e) => setNewNom(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="add-user-prenom">Prénom</Label>
+                                    <Input
+                                        id="add-user-prenom"
+                                        placeholder="Jean"
+                                        value={newPrenom}
+                                        onChange={(e) => setNewPrenom(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="add-user-email">Adresse e-mail</Label>
+                                <Input
+                                    id="add-user-email"
+                                    type="email"
+                                    placeholder="jean.dupont@example.com"
+                                    value={newEmail}
+                                    onChange={(e) => setNewEmail(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="add-user-password">
+                                    {editUser ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe'}
+                                </Label>
+                                <Input
+                                    id="add-user-password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                />
+                            </div>
+                            <div className={`space-y-2 transition-all duration-300 ${isSelectOpen ? 'mb-28' : 'mb-0'}`}>
+                                <Label>Rôle utilisateur</Label>
+                                <Select value={newRole} onValueChange={(v) => setNewRole(v as User['role'])} open={isSelectOpen} onOpenChange={setIsSelectOpen}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper" sideOffset={8} className="z-[100]">
+                                        <SelectItem value="student">Apprenant</SelectItem>
+                                        <SelectItem value="teacher">Enseignant</SelectItem>
+                                        <SelectItem value="super-admin">Administrateur</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <ModalCancelButton onClick={() => setIsAddOpen(false)} />
+                        <ModalConfirmButton
+                            onClick={editUser ? handleEdit : handleAdd}
+                            disabled={!newNom.trim() || !newPrenom.trim() || !newEmail.trim() || (!editUser && !newPassword.trim()) || isAdding}
+                        >
+                            {isAdding ? (editUser ? 'Mise à jour...' : 'Création...') : (editUser ? 'Mettre à jour' : 'Ajouter')}
+                        </ModalConfirmButton>
+                    </ModalFooter>
+                </Modal>
 
                 {/* Erreur */}
                 {error && (
@@ -595,8 +575,8 @@ export default function UserManagement() {
                                             <TableCell className="text-gray-600">{user.joinedAt}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    {/* Voir Documents pour les enseignants */}
-                                                    {user.role === 'teacher' && (
+                                                    {/* Voir Documents pour les enseignants et apprenants */}
+                                                    {(user.role === 'teacher' || user.role === 'student') && (
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
@@ -669,193 +649,93 @@ export default function UserManagement() {
                 </Card>
 
                 {/* Modal de Détails Utilisateur / Documents */}
-                <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                    <DialogContent className="max-w-2xl bg-white p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                <Modal open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                    <ModalHeader onClose={() => setIsDetailsOpen(false)}>
+                        Dossier de {selectedUser?.nom}
+                    </ModalHeader>
+                    <ModalBody>
                         {selectedUser && (
-                            <>
-                                {/* Header avec dégradé subtil aux couleurs du dashboard */}
-                                <div className="bg-gradient-to-br from-violet-600 to-indigo-700 p-8 text-white relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-8 opacity-10">
-                                        <UserIcon className="w-32 h-32 -mr-16 -mt-16" />
+                            <div className="space-y-6">
+                                {/* Profil rapide */}
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <UserIcon className="w-8 h-8 text-blue-600" />
                                     </div>
-
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30 shadow-xl">
-                                            <UserIcon className="w-10 h-10 text-white" />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-3xl font-extrabold text-white mb-2 tracking-tight">
-                                                Dossier de {selectedUser.nom}
-                                            </DialogTitle>
-                                            <div className="flex items-center gap-3">
-                                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm px-3 py-1">
-                                                    {selectedUser.role === 'teacher' ? 'Enseignant' : 'Apprenant'}
-                                                </Badge>
-                                                <Badge className={`${selectedUser.statut === 'active' ? 'bg-emerald-400' : 'bg-amber-400'} text-gray-900 border-none font-bold px-3 py-1`}>
-                                                    {selectedUser.statut === 'active' ? 'Approuvé' : 'En attente'}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-8 bg-gray-50/50">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                        {/* Informations de Contact */}
-                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
-                                            <h4 className="text-xs font-bold text-violet-600 uppercase tracking-widest flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-violet-600"></span>
-                                                Informations de contact
-                                            </h4>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-4 group">
-                                                    <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all">
-                                                        <Smartphone className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Téléphone</p>
-                                                        <p className="font-bold text-gray-900">{selectedUser.telephone || 'Non renseigné'}</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-4 group">
-                                                    <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all">
-                                                        <FileText className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Email professionnel</p>
-                                                        <p className="font-bold text-gray-900">{selectedUser.email}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Profil Professionnel */}
-                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
-                                            <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                                                Profil Professionnel
-                                            </h4>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-4 group">
-                                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                                        <Briefcase className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Poste actuel</p>
-                                                        <p className="font-bold text-gray-900">{selectedUser.poste_actuel || 'Professeur'}</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-4 group">
-                                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                                        <Building className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Institution</p>
-                                                        <p className="font-bold text-gray-900">{selectedUser.institution || 'ISET'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Pièces Justificatives */}
-                                    <div className="space-y-5">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pièces Justificatives</h4>
-                                            <Badge variant="outline" className="text-[10px] font-bold border-gray-200 text-gray-400">
-                                                {(selectedUser.cv_path ? 1 : 0) + (selectedUser.motivation_path ? 1 : 0) + (selectedUser.cin_path ? 1 : 0)} / 3 Documents
+                                    <div>
+                                        <h3 className="text-xl font-bold text-gray-900">{selectedUser.nom}</h3>
+                                        <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant="outline">
+                                                {selectedUser.role === 'teacher' ? 'Enseignant' : 'Apprenant'}
+                                            </Badge>
+                                            <Badge className={selectedUser.statut === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
+                                                {selectedUser.statut === 'active' ? 'Approuvé' : 'En attente'}
                                             </Badge>
                                         </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                            {selectedUser.cv_path ? (
-                                                <a
-                                                    href={`http://localhost:8000/storage/${selectedUser.cv_path}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-violet-600 hover:shadow-md transition-all text-center relative overflow-hidden"
-                                                >
-                                                    <div className="absolute top-0 right-0 w-2 h-full bg-violet-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                    <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                                                        <FileText className="w-6 h-6 text-violet-600" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-900">Curriculum Vitae</p>
-                                                    <p className="text-[10px] text-gray-400 mt-1 font-medium">Format PDF / DOC</p>
-                                                </a>
-                                            ) : (
-                                                <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center opacity-60">
-                                                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                                                        <FileText className="w-6 h-6 text-gray-300" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-400 italic">CV non disponible</p>
-                                                </div>
-                                            )}
-
-                                            {selectedUser.motivation_path ? (
-                                                <a
-                                                    href={`http://localhost:8000/storage/${selectedUser.motivation_path}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-indigo-600 hover:shadow-md transition-all text-center relative overflow-hidden"
-                                                >
-                                                    <div className="absolute top-0 right-0 w-2 h-full bg-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                    <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                                                        <FileText className="w-6 h-6 text-indigo-600" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-900">Lettre de Motiv.</p>
-                                                    <p className="text-[10px] text-gray-400 mt-1 font-medium">Format PDF / DOC</p>
-                                                </a>
-                                            ) : (
-                                                <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center opacity-60">
-                                                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                                                        <FileText className="w-6 h-6 text-gray-300" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-400 italic">Lettre non dispo.</p>
-                                                </div>
-                                            )}
-
-                                            {selectedUser.cin_path ? (
-                                                <a
-                                                    href={`http://localhost:8000/storage/${selectedUser.cin_path}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-emerald-600 hover:shadow-md transition-all text-center relative overflow-hidden"
-                                                >
-                                                    <div className="absolute top-0 right-0 w-2 h-full bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                    <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                                                        <ShieldCheck className="w-6 h-6 text-emerald-600" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-900">Pièce d'Identité</p>
-                                                    <p className="text-[10px] text-gray-400 mt-1 font-medium">Passeport / CIN</p>
-                                                </a>
-                                            ) : (
-                                                <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center opacity-60">
-                                                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                                                        <ShieldCheck className="w-6 h-6 text-gray-300" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-400 italic">CIN non disponible</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-10 flex border-t border-gray-100 pt-6">
-                                        <Button
-                                            onClick={() => setIsDetailsOpen(false)}
-                                            className="ml-auto bg-gray-900 hover:bg-black text-white px-10 rounded-2xl font-bold h-12 shadow-lg transition-transform active:scale-95"
-                                        >
-                                            Fermer le dossier
-                                        </Button>
                                     </div>
                                 </div>
-                            </>
+
+                                {/* Informations detaillées */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                                    <div className="space-y-1">
+                                        <span className="text-sm text-gray-500">Téléphone</span>
+                                        <p className="font-medium text-gray-900 flex items-center gap-2">
+                                            <Smartphone className="w-4 h-4 text-gray-400" />
+                                            {selectedUser.telephone || 'Non renseigné'}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-sm text-gray-500">Institution</span>
+                                        <p className="font-medium text-gray-900 flex items-center gap-2">
+                                            <Building className="w-4 h-4 text-gray-400" />
+                                            {selectedUser.institution || 'Non renseignée'}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-sm text-gray-500">Poste actuel</span>
+                                        <p className="font-medium text-gray-900 flex items-center gap-2">
+                                            <Briefcase className="w-4 h-4 text-gray-400" />
+                                            {selectedUser.poste_actuel || 'Non renseigné'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Pièces Justificatives */}
+                                <div className="space-y-3 pt-4 border-t border-gray-100">
+                                    <h4 className="font-semibold text-gray-900">Pièces Justificatives</h4>
+                                    <div className="space-y-2">
+                                        {selectedUser.cv_path && (
+                                            <a href={`http://localhost:8000/storage/${selectedUser.cv_path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                                <FileText className="w-5 h-5 text-gray-400" />
+                                                <span className="text-sm font-medium text-gray-700">Curriculum Vitae</span>
+                                            </a>
+                                        )}
+                                        {selectedUser.motivation_path && (
+                                            <a href={`http://localhost:8000/storage/${selectedUser.motivation_path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                                <FileText className="w-5 h-5 text-gray-400" />
+                                                <span className="text-sm font-medium text-gray-700">Lettre de Motivation</span>
+                                            </a>
+                                        )}
+                                        {selectedUser.cin_path && (
+                                            <a href={`http://localhost:8000/storage/${selectedUser.cin_path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                                <ShieldCheck className="w-5 h-5 text-gray-400" />
+                                                <span className="text-sm font-medium text-gray-700">Pièce d'Identité</span>
+                                            </a>
+                                        )}
+                                        {(!selectedUser.cv_path && !selectedUser.motivation_path && !selectedUser.cin_path) && (
+                                            <p className="text-sm text-gray-500 italic">Aucun document fourni.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         )}
-                    </DialogContent>
-                </Dialog>
+                    </ModalBody>
+                    <ModalFooter>
+                        <ModalCancelButton onClick={() => setIsDetailsOpen(false)}>
+                            Fermer
+                        </ModalCancelButton>
+                    </ModalFooter>
+                </Modal>
             </div>
         </Layout>
     );

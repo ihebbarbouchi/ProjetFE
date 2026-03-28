@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TypeRessourceController;
 use App\Http\Controllers\DisciplineController;
 use App\Http\Controllers\NiveauController;
+use App\Http\Controllers\Api\QuizIaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,5 +56,24 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Niveaux
         Route::apiResource('niveaux', NiveauController::class);
+    });
+
+    // ── Quiz ─────────────────────────────────────────────────────────────
+    Route::prefix('quiz')->group(function () {
+        // Routes fixes (avant les routes paramétrées pour éviter les conflits)
+        Route::post('/generer',              [QuizIaController::class, 'generer']);
+        Route::get('/',                      [QuizIaController::class, 'index']);
+        Route::get('/publies',               [QuizIaController::class, 'listerPublies']);
+        Route::get('/public/{slug}',         [QuizIaController::class, 'showPublic']);
+        Route::post('/public/{slug}/soumettre', [QuizIaController::class, 'soumettre']);
+
+        // Routes paramétrées par ID en dernier
+        Route::get('/{id}',                  [QuizIaController::class, 'show']);
+        Route::put('/{id}',                  [QuizIaController::class, 'update']);
+        Route::put('/{id}/questions',        [QuizIaController::class, 'syncQuestions']);
+        Route::put('/{id}/publier',          [QuizIaController::class, 'publier']);
+        Route::put('/{id}/archiver',         [QuizIaController::class, 'archiver']);
+        Route::delete('/{id}',               [QuizIaController::class, 'destroy']);
+        Route::get('/{id}/statistiques',     [QuizIaController::class, 'statistiques']);
     });
 });

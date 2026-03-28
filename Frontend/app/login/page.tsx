@@ -9,6 +9,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { AlertCircle, Loader2, Eye, EyeOff, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Modal, ModalBody, ModalFooter, ModalConfirmButton } from '../components/ui/modal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function Login() {
@@ -125,47 +126,42 @@ export default function Login() {
     return (
         <PublicLayout>
             {/* Modal de compte en attente */}
-            {showPendingModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
-                    <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in duration-300">
-                        <div className="p-8 text-center">
-                            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white shadow-sm">
-                                <Clock className="w-10 h-10 text-blue-600 animate-pulse" />
-                            </div>
+            <Modal open={showPendingModal} onOpenChange={(open) => { if (!open) { clearSession(); setShowPendingModal(false); } }}>
+                <ModalBody>
+                    <div className="text-center py-4">
+                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white shadow-sm">
+                            <Clock className="w-10 h-10 text-blue-600 animate-pulse" />
+                        </div>
 
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                                Inscription en attente
-                            </h2>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                            Inscription en attente
+                        </h3>
 
-                            <p className="text-lg font-medium text-blue-600 mb-6">
-                                Votre compte est en cours de valider.
+                        <p className="text-lg font-medium text-blue-600 mb-6">
+                            Votre compte est en cours de validation.
+                        </p>
+
+                        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 flex gap-4 text-left mb-6">
+                            <AlertCircle className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+                            <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                                Un administrateur doit vérifier vos informations avant de vous accorder l&apos;accès à la plateforme EduShare.
                             </p>
+                        </div>
 
-                            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 flex gap-4 text-left mb-8">
-                                <AlertCircle className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
-                                <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                                    Un administrateur doit vérifier vos informations avant de vous accorder l&apos;accès à la plateforme EduShare.
-                                </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="inline-flex items-center justify-center px-4 py-1.5 bg-blue-50 rounded-full text-xs font-bold text-blue-700">
-                                    Déconnexion automatique : {countdown}s
-                                </div>
-                                <Button
-                                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all"
-                                    onClick={() => {
-                                        clearSession();
-                                        setShowPendingModal(false);
-                                    }}
-                                >
-                                    Fermer la fenêtre
-                                </Button>
-                            </div>
+                        <div className="inline-flex items-center justify-center px-4 py-1.5 bg-blue-50 rounded-full text-xs font-bold text-blue-700">
+                            Déconnexion automatique : {countdown}s
                         </div>
                     </div>
-                </div>
-            )}
+                </ModalBody>
+                <ModalFooter>
+                    <ModalConfirmButton
+                        className="w-full"
+                        onClick={() => { clearSession(); setShowPendingModal(false); }}
+                    >
+                        Fermer la fenêtre
+                    </ModalConfirmButton>
+                </ModalFooter>
+            </Modal>
 
             {/* Full-page gradient – mirrors signup layout */}
             <section className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 flex items-center">

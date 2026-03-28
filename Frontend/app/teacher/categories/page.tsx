@@ -8,13 +8,13 @@ import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '../../components/ui/dialog';
+    Modal,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    ModalCancelButton,
+    ModalConfirmButton,
+} from '../../components/ui/modal';
 import {
     Code,
     Calculator,
@@ -119,50 +119,52 @@ export default function AdminCategories() {
                             Manage categories for your teaching resources
                         </p>
                     </div>
-                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                Add Category
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Category</DialogTitle>
-                                <DialogDescription>
-                                    Create a new category to organize resources on the platform.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="add-cat-name">Category Name</Label>
-                                    <Input
-                                        id="add-cat-name"
-                                        placeholder="e.g., Programming, Mathematics"
-                                        value={newName}
-                                        onChange={(e) => setNewName(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="add-cat-desc">Description</Label>
-                                    <Input
-                                        id="add-cat-desc"
-                                        placeholder="Brief description of this category"
-                                        value={newDescription}
-                                        onChange={(e) => setNewDescription(e.target.value)}
-                                    />
-                                </div>
-                                <Button
-                                    onClick={handleAdd}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                                    disabled={!newName.trim()}
-                                >
-                                    Create Category
-                                </Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                    <Button
+                        className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2"
+                        onClick={() => setIsAddOpen(true)}
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Category
+                    </Button>
                 </div>
+
+                {/* Modal Ajouter */}
+                <Modal open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <ModalHeader onClose={() => setIsAddOpen(false)}>
+                        Add New Category
+                    </ModalHeader>
+                    <ModalBody>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="add-cat-name">Category Name</Label>
+                                <Input
+                                    id="add-cat-name"
+                                    placeholder="e.g., Programming, Mathematics"
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="add-cat-desc">Description</Label>
+                                <Input
+                                    id="add-cat-desc"
+                                    placeholder="Brief description of this category"
+                                    value={newDescription}
+                                    onChange={(e) => setNewDescription(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <ModalCancelButton onClick={() => setIsAddOpen(false)} />
+                        <ModalConfirmButton
+                            onClick={handleAdd}
+                            disabled={!newName.trim()}
+                        >
+                            Create Category
+                        </ModalConfirmButton>
+                    </ModalFooter>
+                </Modal>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -247,7 +249,17 @@ export default function AdminCategories() {
 
                                     {/* Actions */}
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                        <Dialog
+                                    <>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                                            onClick={() => openEdit(category)}
+                                        >
+                                            <Pencil className="w-4 h-4 mr-1" />
+                                            Edit
+                                        </Button>
+                                        <Modal
                                             open={editCategory?.id === category.id}
                                             onOpenChange={(open) => {
                                                 if (!open) {
@@ -257,25 +269,11 @@ export default function AdminCategories() {
                                                 }
                                             }}
                                         >
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
-                                                    onClick={() => openEdit(category)}
-                                                >
-                                                    <Pencil className="w-4 h-4 mr-1" />
-                                                    Edit
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Edit Category</DialogTitle>
-                                                    <DialogDescription>
-                                                        Update the name and description for this category.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-                                                <div className="space-y-4 py-4">
+                                            <ModalHeader onClose={() => { setEditCategory(null); setNewName(''); setNewDescription(''); }}>
+                                                Edit Category
+                                            </ModalHeader>
+                                            <ModalBody>
+                                                <div className="space-y-4">
                                                     <div className="space-y-2">
                                                         <Label htmlFor="edit-cat-name">Category Name</Label>
                                                         <Input
@@ -292,16 +290,19 @@ export default function AdminCategories() {
                                                             onChange={(e) => setNewDescription(e.target.value)}
                                                         />
                                                     </div>
-                                                    <Button
-                                                        onClick={handleEdit}
-                                                        className="w-full bg-emerald-600 hover:bg-emerald-700"
-                                                        disabled={!newName.trim()}
-                                                    >
-                                                        Save Changes
-                                                    </Button>
                                                 </div>
-                                            </DialogContent>
-                                        </Dialog>
+                                            </ModalBody>
+                                            <ModalFooter>
+                                                <ModalCancelButton onClick={() => { setEditCategory(null); setNewName(''); setNewDescription(''); }} />
+                                                <ModalConfirmButton
+                                                    onClick={handleEdit}
+                                                    disabled={!newName.trim()}
+                                                >
+                                                    Save Changes
+                                                </ModalConfirmButton>
+                                            </ModalFooter>
+                                        </Modal>
+                                    </>
 
 
                                     </div>

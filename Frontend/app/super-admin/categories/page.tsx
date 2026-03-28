@@ -9,13 +9,13 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '../../components/ui/dialog';
+    Modal,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    ModalCancelButton,
+    ModalConfirmButton,
+} from '../../components/ui/modal';
 import {
     Code,
     Calculator,
@@ -138,80 +138,71 @@ export default function AdminCategories() {
                                 : 'Manage categories for your teaching resources'}
                         </p>
                     </div>
-                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all hover:scale-[1.02] active:scale-95 px-6 h-12 rounded-2xl flex items-center gap-2 font-bold">
-                                <Plus className="w-5 h-5" />
-                                Nouvelle Catégorie
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md bg-white p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-                            <div className="bg-gradient-to-br from-violet-600 to-indigo-700 p-8 text-white relative">
-                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <FolderOpen className="w-24 h-24 -mr-8 -mt-8" />
-                                </div>
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl font-bold text-white mb-2">Ajouter une catégorie</DialogTitle>
-                                    <DialogDescription className="text-violet-100 opacity-90">
-                                        Créer une nouvelle catégorie pour organiser les ressources
-                                    </DialogDescription>
-                                </DialogHeader>
-                            </div>
-                            <div className="p-8 space-y-5 max-h-[70vh] overflow-y-auto bg-gray-50/50">
-                                <div className="space-y-2 group">
-                                    <Label htmlFor="add-cat-name" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Nom de la catégorie</Label>
-                                    <Input
-                                        id="add-cat-name"
-                                        placeholder="Ex : Programmation, Mathématiques"
-                                        value={newName}
-                                        onChange={(e) => setNewName(e.target.value)}
-                                        className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2 group">
-                                    <Label htmlFor="add-cat-code" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Code identification</Label>
-                                    <Input
-                                        id="add-cat-code"
-                                        placeholder="Ex : PROG, MATH"
-                                        value={newCode}
-                                        onChange={(e) => setNewCode(e.target.value)}
-                                        className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2 group">
-                                    <Label htmlFor="add-cat-type" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Type de ressources</Label>
-                                    <Input
-                                        id="add-cat-type"
-                                        placeholder="Ex : Cours, Exercices, TP"
-                                        value={newType}
-                                        onChange={(e) => setNewType(e.target.value)}
-                                        className="h-12 bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2 group">
-                                    <Label htmlFor="add-cat-desc" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Description détaillée</Label>
-                                    <Textarea
-                                        id="add-cat-desc"
-                                        placeholder="Brève description de la catégorie"
-                                        value={newDescription}
-                                        onChange={(e) => setNewDescription(e.target.value)}
-                                        className="min-h-[100px] bg-white shadow-sm border-gray-100 focus:ring-violet-500 focus:border-violet-500 rounded-2xl transition-all"
-                                    />
-                                </div>
-                                <div className="pt-6">
-                                    <Button
-                                        onClick={handleAdd}
-                                        className="w-full bg-violet-600 hover:bg-violet-700 h-14 text-lg font-bold transition-all hover:scale-[1.02] active:scale-95 rounded-2xl shadow-xl shadow-violet-200 flex items-center justify-center gap-2"
-                                        disabled={!newName.trim() || !newCode.trim()}
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                        Créer la catégorie
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                    <Button
+                        className="bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all hover:scale-[1.02] active:scale-95 px-6 h-12 rounded-2xl flex items-center gap-2 font-bold"
+                        onClick={() => setIsAddOpen(true)}
+                    >
+                        <Plus className="w-5 h-5" />
+                        Nouvelle Catégorie
+                    </Button>
                 </div>
+
+                {/* Modal Ajouter */}
+                <Modal open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <ModalHeader onClose={() => setIsAddOpen(false)}>
+                        Ajouter une catégorie
+                    </ModalHeader>
+                    <ModalBody>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="add-cat-name">Nom de la catégorie</Label>
+                                <Input
+                                    id="add-cat-name"
+                                    placeholder="Ex : Programmation, Mathématiques"
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="add-cat-code">Code identification</Label>
+                                <Input
+                                    id="add-cat-code"
+                                    placeholder="Ex : PROG, MATH"
+                                    value={newCode}
+                                    onChange={(e) => setNewCode(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="add-cat-type">Type de ressources</Label>
+                                <Input
+                                    id="add-cat-type"
+                                    placeholder="Ex : Cours, Exercices, TP"
+                                    value={newType}
+                                    onChange={(e) => setNewType(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="add-cat-desc">Description détaillée</Label>
+                                <Textarea
+                                    id="add-cat-desc"
+                                    placeholder="Brève description de la catégorie"
+                                    value={newDescription}
+                                    onChange={(e) => setNewDescription(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <ModalCancelButton onClick={() => setIsAddOpen(false)} />
+                        <ModalConfirmButton
+                            onClick={handleAdd}
+                            disabled={!newName.trim() || !newCode.trim()}
+                        >
+                            <Plus className="w-4 h-4 mr-1 inline-block" />
+                            Créer la catégorie
+                        </ModalConfirmButton>
+                    </ModalFooter>
+                </Modal>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -302,70 +293,60 @@ export default function AdminCategories() {
 
                                     {/* Actions */}
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                        <Dialog
-                                            open={editCategory?.id === category.id}
-                                            onOpenChange={(open) => {
-                                                if (!open) {
-                                                    setEditCategory(null);
-                                                    setNewName('');
-                                                    setNewDescription('');
-                                                }
-                                            }}
-                                        >
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
-                                                    onClick={() => openEdit(category)}
-                                                >
-                                                    <Pencil className="w-4 h-4 mr-1" />
-                                                    Edit
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-md bg-white p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-                                                <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 text-white relative">
-                                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                                        <Pencil className="w-24 h-24 -mr-8 -mt-8" />
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                                                onClick={() => openEdit(category)}
+                                            >
+                                                <Pencil className="w-4 h-4 mr-1" />
+                                                Edit
+                                            </Button>
+                                            <Modal
+                                                open={editCategory?.id === category.id}
+                                                onOpenChange={(open) => {
+                                                    if (!open) {
+                                                        setEditCategory(null);
+                                                        setNewName('');
+                                                        setNewDescription('');
+                                                    }
+                                                }}
+                                            >
+                                                <ModalHeader onClose={() => { setEditCategory(null); setNewName(''); setNewDescription(''); }}>
+                                                    Modifier la catégorie
+                                                </ModalHeader>
+                                                <ModalBody>
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="edit-cat-name">Nom de la catégorie</Label>
+                                                            <Input
+                                                                id="edit-cat-name"
+                                                                value={newName}
+                                                                onChange={(e) => setNewName(e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="edit-cat-desc">Description détaillée</Label>
+                                                            <Textarea
+                                                                id="edit-cat-desc"
+                                                                value={newDescription}
+                                                                onChange={(e) => setNewDescription(e.target.value)}
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <DialogHeader>
-                                                        <DialogTitle className="text-2xl font-bold text-white mb-2">Modifier la catégorie</DialogTitle>
-                                                        <DialogDescription className="text-indigo-100 opacity-90">
-                                                            Mettre à jour les informations de {category.name}
-                                                        </DialogDescription>
-                                                    </DialogHeader>
-                                                </div>
-                                                <div className="p-8 space-y-5 bg-gray-50/50">
-                                                    <div className="space-y-2 group">
-                                                        <Label htmlFor="edit-cat-name" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Nom de la catégorie</Label>
-                                                        <Input
-                                                            id="edit-cat-name"
-                                                            value={newName}
-                                                            onChange={(e) => setNewName(e.target.value)}
-                                                            className="h-12 bg-white shadow-sm border-gray-100 focus:ring-indigo-500 focus:border-indigo-500 rounded-2xl transition-all"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2 group">
-                                                        <Label htmlFor="edit-cat-desc" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Description détaillée</Label>
-                                                        <Textarea
-                                                            id="edit-cat-desc"
-                                                            value={newDescription}
-                                                            onChange={(e) => setNewDescription(e.target.value)}
-                                                            className="min-h-[100px] bg-white shadow-sm border-gray-100 focus:ring-indigo-500 focus:border-indigo-500 rounded-2xl transition-all"
-                                                        />
-                                                    </div>
-                                                    <div className="pt-6">
-                                                        <Button
-                                                            onClick={handleEdit}
-                                                            className="w-full bg-indigo-600 hover:bg-indigo-700 h-14 text-lg font-bold transition-all hover:scale-[1.02] active:scale-95 rounded-2xl shadow-xl shadow-indigo-200"
-                                                            disabled={!newName.trim()}
-                                                        >
-                                                            Enregistrer les modifications
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
+                                                </ModalBody>
+                                                <ModalFooter>
+                                                    <ModalCancelButton onClick={() => { setEditCategory(null); setNewName(''); setNewDescription(''); }} />
+                                                    <ModalConfirmButton
+                                                        onClick={handleEdit}
+                                                        disabled={!newName.trim()}
+                                                    >
+                                                        Enregistrer
+                                                    </ModalConfirmButton>
+                                                </ModalFooter>
+                                            </Modal>
+                                        </>
 
                                         {role === 'super-admin' && (
                                             <Button

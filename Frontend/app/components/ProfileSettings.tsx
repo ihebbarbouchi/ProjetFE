@@ -8,7 +8,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'sonner';
 import {
     User,
     Mail,
@@ -22,9 +21,10 @@ import {
     Save,
     Loader2,
     Lock,
-    ArrowLeft,
     Camera,
     ChevronRight,
+    CheckCircle2,
+    AlertCircle,
 } from 'lucide-react';
 
 interface ProfileSettingsProps {
@@ -39,6 +39,7 @@ export function ProfileSettings({ role }: ProfileSettingsProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
     const [formData, setFormData] = useState({
         prenom: '',
@@ -65,11 +66,15 @@ export function ProfileSettings({ role }: ProfileSettingsProps) {
                 poste_actuel: user.poste_actuel || '',
                 institution: user.institution || '',
             });
-            // Load existing avatar if stored
             const storedAvatar = localStorage.getItem(`avatar_${user.id}`);
             if (storedAvatar) setAvatarPreview(storedAvatar);
         }
     }, [user]);
+
+    const showToast = (type: 'success' | 'error', msg: string) => {
+        setToastMsg({ type, msg });
+        setTimeout(() => setToastMsg(null), 3500);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -80,15 +85,12 @@ export function ProfileSettings({ role }: ProfileSettingsProps) {
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.size > 2 * 1024 * 1024) {
-            toast.error('La photo ne doit pas dépasser 2 Mo');
+            showToast('error', 'La photo ne doit pas dépasser 2 Mo');
             return;
         }
         setAvatarFile(file);
         const reader = new FileReader();
-        reader.onloadend = () => {
-            const result = reader.result as string;
-            setAvatarPreview(result);
-        };
+        reader.onloadend = () => setAvatarPreview(reader.result as string);
         reader.readAsDataURL(file);
     };
 
@@ -96,7 +98,6 @@ export function ProfileSettings({ role }: ProfileSettingsProps) {
         e.preventDefault();
         setIsLoading(true);
 
-        // Save avatar locally (base64 in localStorage as a quick win — replace with server upload if needed)
         if (avatarFile && user) {
             localStorage.setItem(`avatar_${user.id}`, avatarPreview!);
         }
@@ -115,321 +116,296 @@ export function ProfileSettings({ role }: ProfileSettingsProps) {
             const data = await response.json();
 
             if (response.ok) {
-                toast.success('Profil mis à jour avec succès !');
+                showToast('success', 'Profil mis à jour avec succès !');
                 const updatedUser = { ...user, ...data.user };
                 localStorage.setItem('auth_user', JSON.stringify(updatedUser));
                 setTimeout(() => window.location.reload(), 1500);
             } else {
-                toast.error(data.message || 'Erreur lors de la mise à jour');
+                showToast('error', data.message || 'Erreur lors de la mise à jour');
             }
-        } catch (error) {
-            console.error('Update profile error:', error);
-            toast.error('Erreur de connexion au serveur');
+        } catch {
+            showToast('error', 'Erreur de connexion au serveur');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Theme helpers
-    const themeColor = role === 'teacher' ? 'emerald' : 'blue';
-    const themeBg = role === 'teacher' ? 'bg-emerald-600' : 'bg-blue-600';
-    const themeHover = role === 'teacher' ? 'hover:bg-emerald-700' : 'hover:bg-blue-700';
-    const themeShadow = role === 'teacher' ? 'shadow-emerald-200' : 'shadow-blue-200';
-    const themeIconBox = role === 'teacher' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600';
-    const themeBorder = role === 'teacher' ? 'border-emerald-200' : 'border-blue-200';
-    const themeRing = role === 'teacher' ? 'focus:ring-emerald-400' : 'focus:ring-blue-400';
+    // Theme tokens — aligns with teacher (emerald) and student (blue) dashboard palettes
+    const accentBg   = role === 'teacher' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200';
+    const accentIcon  = role === 'teacher' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600';
+    const accentBorder = role === 'teacher' ? 'border-emerald-200 text-emerald-700' : 'border-blue-200 text-blue-700';
+    const accentAvatarBg = role === 'teacher' ? 'bg-emerald-600' : 'bg-blue-600';
+    const accentLink   = role === 'teacher' ? 'text-emerald-600 hover:text-emerald-800' : 'text-blue-600 hover:text-blue-800';
 
     const userInitials = user?.nom
-        ? user.nom.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        ? user.nom.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
         : role === 'teacher' ? 'E' : 'A';
 
     const changePasswordPath = `/${role}/change-password`;
 
     return (
         <Layout role={role}>
-            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
+            <div className="space-y-6">
 
-                {/* ── Header ── */}
-                <div className="relative bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden p-8">
-                    {/* Background deco */}
-                    <div className={`absolute inset-0 ${themeBg} opacity-[0.03] pointer-events-none`} />
-                    <div className={`absolute -top-16 -right-16 w-64 h-64 ${themeBg} opacity-[0.05] rounded-full pointer-events-none`} />
+                {/* Toast notification */}
+                {toastMsg && (
+                    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium animate-in slide-in-from-top-2 ${toastMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                        {toastMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                        {toastMsg.msg}
+                    </div>
+                )}
 
-                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                        <div className="flex items-center gap-6">
-                            {/* Avatar with upload */}
-                            <div className="relative group/avatar flex-shrink-0">
-                                <div
-                                    className={`w-24 h-24 rounded-[1.5rem] ${themeBg} flex items-center justify-center text-white shadow-xl ${themeShadow} overflow-hidden cursor-pointer`}
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    {avatarPreview ? (
-                                        <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-3xl font-black">{userInitials}</span>
-                                    )}
-                                </div>
-                                {/* Camera overlay */}
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="absolute inset-0 rounded-[1.5rem] bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center cursor-pointer"
-                                >
-                                    <Camera className="w-7 h-7 text-white drop-shadow" />
-                                </div>
-                                {/* Upload badge */}
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className={`absolute -bottom-2 -right-2 w-8 h-8 ${themeBg} rounded-full border-2 border-white flex items-center justify-center shadow-md cursor-pointer`}
-                                >
-                                    <Camera className="w-4 h-4 text-white" />
-                                </div>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/png, image/jpeg, image/webp"
-                                    className="hidden"
-                                    onChange={handleAvatarChange}
-                                />
-                            </div>
-
-                            <div>
-                                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Paramètres du profil</h1>
-                                <p className="text-gray-400 mt-1 text-sm font-medium">Personnalisez vos informations personnelles</p>
-                                <p className="text-xs text-gray-400 mt-2 italic">Cliquez sur votre avatar pour changer la photo · max 2 Mo</p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-3">
-                            <div className={`px-4 py-2 rounded-2xl ${themeIconBox} font-bold text-xs border ${themeBorder} flex items-center gap-2 shadow-sm`}>
-                                <ShieldCheck className="w-4 h-4" />
-                                Compte {role === 'teacher' ? 'Enseignant' : 'Apprenant'}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => window.history.back()}
-                                className="flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                Retour
-                            </button>
-                        </div>
+                {/* ── Page Header ── */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-900">Mon Profil</h2>
+                        <p className="text-gray-600 mt-1">Gérez vos informations personnelles et professionnelles</p>
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${accentBorder} ${accentIcon}`}>
+                        <ShieldCheck className="w-4 h-4" />
+                        Compte {role === 'teacher' ? 'Enseignant' : 'Apprenant'}
                     </div>
                 </div>
 
-                {/* ── Form ── */}
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* ── Main Form ── */}
+                <form onSubmit={handleSubmit}>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    {/* Left: main fields */}
-                    <div className="lg:col-span-2 space-y-8">
+                        {/* Left: main fields */}
+                        <div className="lg:col-span-2 space-y-6">
 
-                        {/* Informations personnelles */}
-                        <Card className="border-none shadow-md rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="border-b border-gray-50 bg-gray-50/40 p-6">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2.5 rounded-xl ${themeIconBox}`}>
-                                        <User className="w-5 h-5" />
+                            {/* Identité */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${accentIcon}`}>
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <CardTitle>Informations personnelles</CardTitle>
+                                            <CardDescription>Nom, email et coordonnées</CardDescription>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <CardTitle className="text-base font-bold">Informations personnelles</CardTitle>
-                                        <CardDescription className="text-xs mt-0.5">Nom, email et coordonnées</CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Prénom</Label>
-                                        <Input
-                                            name="prenom"
-                                            value={formData.prenom}
-                                            onChange={handleChange}
-                                            required
-                                            className={`h-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
+                                </CardHeader>
+                                <CardContent className="space-y-5">
+
+                                    {/* Avatar row */}
+                                    <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                        <div
+                                            className={`relative group/av w-14 h-14 rounded-xl ${accentAvatarBg} flex items-center justify-center text-white text-lg font-bold overflow-hidden cursor-pointer flex-shrink-0`}
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            {avatarPreview
+                                                ? <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                                                : <span>{userInitials}</span>
+                                            }
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/av:opacity-100 transition-all flex items-center justify-center">
+                                                <Camera className="w-5 h-5 text-white" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-900">{user?.nom || 'Votre nom'}</p>
+                                            <p className="text-xs text-gray-400 mt-0.5">{user?.email}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className={`mt-1.5 text-xs font-medium ${accentLink} transition-colors flex items-center gap-1`}
+                                            >
+                                                <Camera className="w-3 h-3" /> Changer la photo (max 2 Mo)
+                                            </button>
+                                        </div>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/webp"
+                                            className="hidden"
+                                            onChange={handleAvatarChange}
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Nom de famille</Label>
-                                        <Input
-                                            name="nom_famille"
-                                            value={formData.nom_famille}
-                                            onChange={handleChange}
-                                            required
-                                            className={`h-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
-                                        />
-                                    </div>
-                                </div>
 
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Adresse Email</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                                        <Input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            required
-                                            className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Téléphone</Label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                    {/* Prénom / Nom */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Prénom *</Label>
                                             <Input
-                                                name="telephone"
-                                                value={formData.telephone}
+                                                name="prenom"
+                                                value={formData.prenom}
                                                 onChange={handleChange}
-                                                className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
+                                                required
+                                                placeholder="Votre prénom"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Nom de famille *</Label>
+                                            <Input
+                                                name="nom_famille"
+                                                value={formData.nom_famille}
+                                                onChange={handleChange}
+                                                required
+                                                placeholder="Votre nom"
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Ville</Label>
+
+                                    {/* Email */}
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-gray-500 font-medium">Adresse e-mail *</Label>
                                         <div className="relative">
-                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                             <Input
-                                                name="ville"
-                                                placeholder="Ex : Alger, Paris…"
-                                                value={formData.ville}
+                                                type="email"
+                                                name="email"
+                                                value={formData.email}
                                                 onChange={handleChange}
-                                                className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
+                                                required
+                                                className="pl-10"
+                                                placeholder="votre@email.com"
                                             />
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Pays + Adresse */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Pays</Label>
-                                        <div className="relative">
-                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                                            <Input
-                                                name="pays"
-                                                placeholder="Ex : Algérie, France…"
-                                                value={formData.pays}
-                                                onChange={handleChange}
-                                                className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
-                                            />
+                                    {/* Téléphone / Ville */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Téléphone</Label>
+                                            <div className="relative">
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input name="telephone" value={formData.telephone} onChange={handleChange} className="pl-10" placeholder="+213 ..." />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Ville</Label>
+                                            <div className="relative">
+                                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input name="ville" value={formData.ville} onChange={handleChange} className="pl-10" placeholder="Ex: Alger, Paris…" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Adresse</Label>
-                                        <div className="relative">
-                                            <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                                            <Input
-                                                name="adresse"
-                                                placeholder="Ex : 12 Rue de la République…"
-                                                value={formData.adresse}
-                                                onChange={handleChange}
-                                                className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
-                                            />
+
+                                    {/* Pays / Adresse */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Pays</Label>
+                                            <div className="relative">
+                                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input name="pays" value={formData.pays} onChange={handleChange} className="pl-10" placeholder="Ex: Algérie, France…" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Adresse</Label>
+                                            <div className="relative">
+                                                <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input name="adresse" value={formData.adresse} onChange={handleChange} className="pl-10" placeholder="Ex: 12 Rue de la République…" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        {/* Informations professionnelles */}
-                        <Card className="border-none shadow-md rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="border-b border-gray-50 bg-gray-50/40 p-6">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2.5 rounded-xl ${themeIconBox}`}>
-                                        <Briefcase className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-base font-bold">Informations professionnelles</CardTitle>
-                                        <CardDescription className="text-xs mt-0.5">Poste, établissement et parcours</CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Poste actuel</Label>
-                                        <div className="relative">
-                                            <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                                            <Input
-                                                name="poste_actuel"
-                                                placeholder="Ex : Professeur de Mathématiques"
-                                                value={formData.poste_actuel}
-                                                onChange={handleChange}
-                                                className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
-                                            />
+                            {/* Infos professionnelles */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${accentIcon}`}>
+                                            <Briefcase className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <CardTitle>Informations professionnelles</CardTitle>
+                                            <CardDescription>Poste et établissement</CardDescription>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Établissement</Label>
-                                        <div className="relative">
-                                            <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                                            <Input
-                                                name="institution"
-                                                placeholder="Ex : École Polytechnique"
-                                                value={formData.institution}
-                                                onChange={handleChange}
-                                                className={`h-12 pl-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all focus:${themeRing}`}
-                                            />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Poste actuel</Label>
+                                            <div className="relative">
+                                                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input name="poste_actuel" value={formData.poste_actuel} onChange={handleChange} className="pl-10" placeholder="Ex: Professeur de Mathématiques" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-gray-500 font-medium">Établissement</Label>
+                                            <div className="relative">
+                                                <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input name="institution" value={formData.institution} onChange={handleChange} className="pl-10" placeholder="Ex: École Polytechnique" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                    {/* Right: sidebar */}
-                    <div className="space-y-6">
+                        {/* ── Right sidebar ── */}
+                        <div className="space-y-4">
 
-                        {/* Security card → redirect to change-password */}
-                        <Card className="border-none shadow-md rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="border-b border-gray-50 bg-gray-50/40 p-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2.5 rounded-xl bg-gray-100 text-gray-500">
-                                        <Lock className="w-5 h-5" />
+                            {/* Bouton Enregistrer */}
+                            <Card>
+                                <CardContent className="p-5">
+                                    <Button
+                                        type="submit"
+                                        id="btn-save-profile"
+                                        disabled={isLoading}
+                                        className={`w-full transition-all hover:scale-[1.02] ${accentBg}`}
+                                    >
+                                        {isLoading
+                                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                                            : <><Save className="w-4 h-4" /> Enregistrer les modifications</>
+                                        }
+                                    </Button>
+                                    <p className="text-center text-xs text-gray-400 mt-3">
+                                        Vos données sont sécurisées et ne seront jamais partagées sans votre consentement.
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            {/* Sécurité */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">
+                                            <Lock className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-sm">Sécurité du compte</CardTitle>
+                                            <CardDescription className="text-xs">Mot de passe et accès</CardDescription>
+                                        </div>
                                     </div>
-                                    <CardTitle className="text-base font-bold">Sécurité du compte</CardTitle>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                                    Pour sécuriser votre compte, nous vous recommandons d&apos;utiliser un mot de passe fort d&apos;au moins 8 caractères.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(changePasswordPath)}
-                                    className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 ${themeBorder} ${themeIconBox} font-bold text-sm transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] group`}
-                                >
-                                    <span className="flex items-center gap-2">
-                                        <Lock className="w-4 h-4" />
-                                        Modifier votre mot de passe
-                                    </span>
-                                    <ChevronRight className="w-4 h-4 opacity-60 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </CardContent>
-                        </Card>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-xs text-gray-400 mb-3 leading-relaxed">
+                                        Utilisez un mot de passe fort d&apos;au moins 8 caractères pour protéger votre compte.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(changePasswordPath)}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border ${accentBorder} ${accentIcon} font-semibold text-sm transition-all hover:shadow-sm hover:scale-[1.01] group`}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <Lock className="w-4 h-4" />
+                                            Changer le mot de passe
+                                        </span>
+                                        <ChevronRight className="w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
+                                </CardContent>
+                            </Card>
 
-                        {/* Save button */}
-                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl space-y-4 sticky top-6">
-                            <Button
-                                type="submit"
-                                disabled={isLoading}
-                                className={`w-full ${themeBg} ${themeHover} text-white h-14 rounded-2xl font-bold shadow-lg ${themeShadow} transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2`}
-                            >
-                                {isLoading ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <>
-                                        <Save className="w-5 h-5" />
-                                        Enregistrer les modifications
-                                    </>
-                                )}
-                            </Button>
-                            <p className="text-center text-[11px] text-gray-400 font-medium leading-relaxed">
-                                Vos données sont sécurisées et ne seront jamais partagées sans votre consentement.
-                            </p>
+                            {/* Infos compte */}
+                            <Card>
+                                <CardContent className="p-5 space-y-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Informations du compte</p>
+                                    {[
+                                        { label: 'Rôle', val: role === 'teacher' ? 'Enseignant' : 'Apprenant' },
+                                        { label: 'Statut', val: 'Actif' },
+                                        { label: 'Membre depuis', val: (user as unknown as Record<string, string>)?.created_at ? new Date((user as unknown as Record<string, string>).created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' }) : '—' },
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                                            <span className="text-xs text-gray-400">{item.label}</span>
+                                            <span className="text-xs font-semibold text-gray-700">{item.val}</span>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
                         </div>
                     </div>
                 </form>

@@ -119,71 +119,63 @@ export function ChangePassword({ role }: ChangePasswordProps) {
 
     return (
         <Layout role={role}>
-            <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
-
-                {/* Header */}
-                <div className={`relative bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden p-8`}>
-                    <div className={`absolute -top-12 -right-12 w-48 h-48 ${themeBg} opacity-[0.06] rounded-full pointer-events-none`} />
-                    <div className={`absolute -bottom-12 -left-12 w-36 h-36 ${themeBg} opacity-[0.04] rounded-full pointer-events-none`} />
-
-                    <div className="relative z-10 flex items-start gap-4">
-                        {/* Back arrow */}
-                        <button
-                            type="button"
-                            onClick={() => router.push(profilePath)}
-                            className="mt-1 p-2 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition-all flex-shrink-0"
-                            aria-label="Retour"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Sécurité du compte</p>
-                            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Modifier le mot de passe</h1>
-                            <p className="text-gray-400 mt-1 text-sm">
-                                Choisissez un mot de passe fort d&apos;au moins <strong>8 caractères</strong>
-                            </p>
+            <div className="space-y-6 max-w-2xl mx-auto">
+                {/* ── Page Header ── */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => router.push(profilePath)}
+                                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 transition-all flex-shrink-0"
+                                aria-label="Retour"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                            <h2 className="text-3xl font-bold text-gray-900">Sécurité</h2>
                         </div>
+                        <p className="text-gray-600 mt-1 ml-12">Modifiez votre mot de passe pour sécuriser votre compte</p>
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${themeBorder} ${themeIconBox}`}>
+                        <ShieldCheck className="w-4 h-4" />
+                        Protection
                     </div>
                 </div>
 
                 {/* Success state */}
                 {success ? (
-                    <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-12 flex flex-col items-center gap-6 text-center">
-                        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-                            <CheckCircle className="w-10 h-10 text-green-500" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-gray-900">Mot de passe modifié !</h2>
-                            <p className="text-gray-400 mt-2 text-sm">Vous allez être redirigé vers votre profil…</p>
-                        </div>
-                    </div>
+                    <Card>
+                        <CardContent className="p-12 border-none flex flex-col items-center gap-6 text-center">
+                            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <CheckCircle className="w-10 h-10 text-emerald-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Mot de passe modifié !</h2>
+                                <p className="text-gray-500 mt-2 text-sm">Vous allez être redirigé vers votre profil…</p>
+                            </div>
+                        </CardContent>
+                    </Card>
                 ) : (
                     <form onSubmit={handleSubmit}>
-                        <Card className="border-none shadow-md rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="border-b border-gray-50 bg-gray-50/40 p-6">
+                        <Card>
+                            <CardHeader>
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2.5 rounded-xl ${themeIconBox}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${themeIconBox}`}>
                                         <Lock className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-base font-bold">Nouveau mot de passe</CardTitle>
-                                        <CardDescription className="text-xs mt-0.5">
-                                            Renseignez votre mot de passe actuel puis choisissez-en un nouveau
-                                        </CardDescription>
+                                        <CardTitle>Nouveau mot de passe</CardTitle>
+                                        <CardDescription>Renseignez votre mot de passe actuel puis choisissez-en un nouveau</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
 
-                            <CardContent className="p-8 space-y-7">
-
+                            <CardContent className="space-y-6">
                                 {/* Ancien mot de passe */}
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                        Mot de passe actuel
-                                    </Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-gray-500 font-medium">Mot de passe actuel *</Label>
                                     <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <Input
                                             type={showCurrent ? 'text' : 'password'}
                                             name="current_password"
@@ -191,28 +183,25 @@ export function ChangePassword({ role }: ChangePasswordProps) {
                                             onChange={handleChange}
                                             required
                                             placeholder="••••••••"
-                                            className="h-13 pl-12 pr-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all h-12 font-mono tracking-wider"
+                                            className="pl-10 pr-10 tracking-widest"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowCurrent(p => !p)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                         >
                                             {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
                                 </div>
 
-                                {/* Séparateur */}
                                 <hr className="border-gray-100" />
 
                                 {/* Nouveau mot de passe */}
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                        Nouveau mot de passe
-                                    </Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-gray-500 font-medium">Nouveau mot de passe *</Label>
                                     <div className="relative">
-                                        <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                        <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <Input
                                             type={showNew ? 'text' : 'password'}
                                             name="new_password"
@@ -221,12 +210,12 @@ export function ChangePassword({ role }: ChangePasswordProps) {
                                             required
                                             minLength={8}
                                             placeholder="Minimum 8 caractères"
-                                            className="h-12 pl-12 pr-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all font-mono tracking-wider"
+                                            className="pl-10 pr-10 tracking-widest"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowNew(p => !p)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                         >
                                             {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
@@ -251,12 +240,10 @@ export function ChangePassword({ role }: ChangePasswordProps) {
                                 </div>
 
                                 {/* Confirmation */}
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                        Confirmer le nouveau mot de passe
-                                    </Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-gray-500 font-medium">Confirmer le nouveau mot de passe *</Label>
                                     <div className="relative">
-                                        <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                        <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <Input
                                             type={showConfirm ? 'text' : 'password'}
                                             name="confirm_password"
@@ -265,54 +252,56 @@ export function ChangePassword({ role }: ChangePasswordProps) {
                                             required
                                             minLength={8}
                                             placeholder="Répétez le mot de passe"
-                                            className={`h-12 pl-12 pr-12 border-gray-100 rounded-2xl bg-gray-50/50 focus:bg-white transition-all font-mono tracking-wider ${form.confirm_password && form.confirm_password !== form.new_password
-                                                ? 'border-red-300 bg-red-50/30'
-                                                : form.confirm_password && form.confirm_password === form.new_password
-                                                    ? 'border-green-300 bg-green-50/30'
+                                            className={`pl-10 pr-10 tracking-widest ${
+                                                form.confirm_password && form.confirm_password !== form.new_password
+                                                    ? 'border-red-300 bg-red-50/50 focus-visible:ring-red-200 text-red-900'
+                                                    : form.confirm_password && form.confirm_password === form.new_password
+                                                    ? 'border-emerald-300 bg-emerald-50/50 focus-visible:ring-emerald-200 text-emerald-900'
                                                     : ''
-                                                }`}
+                                            }`}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowConfirm(p => !p)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                         >
                                             {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
                                     {form.confirm_password && form.confirm_password !== form.new_password && (
-                                        <p className="text-[11px] text-red-500 font-bold ml-1">Les mots de passe ne correspondent pas</p>
+                                        <p className="text-xs text-red-500 font-medium flex items-center gap-1 mt-1">
+                                            Les mots de passe ne correspondent pas
+                                        </p>
                                     )}
                                     {form.confirm_password && form.confirm_password === form.new_password && (
-                                        <p className="text-[11px] text-green-500 font-bold ml-1 flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" /> Les mots de passe correspondent
+                                        <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                                            <CheckCircle className="w-3.5 h-3.5" /> Les mots de passe correspondent
                                         </p>
                                     )}
                                 </div>
 
                                 {/* Submit */}
-                                <Button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className={`w-full ${themeBg} ${themeHover} text-white h-14 rounded-2xl font-bold shadow-lg ${themeShadow} transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 mt-2`}
-                                >
-                                    {isLoading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <>
-                                            <ShieldCheck className="w-5 h-5" />
-                                            Enregistrer le nouveau mot de passe
-                                        </>
-                                    )}
-                                </Button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(profilePath)}
-                                    className="w-full text-center text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors mt-2"
-                                >
-                                    ← Annuler et retourner au profil
-                                </button>
+                                <div className="pt-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className={`w-full transition-all hover:scale-[1.02] ${themeBg}`}
+                                    >
+                                        {isLoading ? (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <ShieldCheck className="w-4 h-4 mr-2" />
+                                        )}
+                                        Enregistrer le mot de passe
+                                    </Button>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(profilePath)}
+                                        className="w-full text-center text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors mt-4"
+                                    >
+                                        ← Annuler et retourner au profil
+                                    </button>
+                                </div>
                             </CardContent>
                         </Card>
                     </form>
