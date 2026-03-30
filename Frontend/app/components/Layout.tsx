@@ -21,6 +21,7 @@ import {
   GraduationCap,
   Layers,
   HelpCircle,
+  Database,
 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -94,6 +95,7 @@ export function Layout({ children, role, onSearch }: LayoutProps) {
           { icon: BookOpen, label: 'Mes ressources', path: '/teacher/resources' },
           { icon: PlusCircle, label: 'Ajouter une ressource', path: '/add-resource' },
           { icon: HelpCircle, label: 'Mes Quiz', path: '/teacher/quiz' },
+          { icon: Database, label: 'Bibliothèque QCM', path: '/teacher/qcm-bibliotheque' },
           { icon: FolderOpen, label: 'Catégories', path: '/teacher/categories' },
           { icon: Users, label: 'Mes apprenants', path: '/teacher/students' },
         ];

@@ -103,6 +103,88 @@ class QuizIaController extends Controller
         }
     }
 
+    /**
+     * POST /api/quiz/import-json
+     * Upload an existing QCM JSON file, decode it and create the quiz.
+     */
+    public function importJson(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'fichier'       => 'required|file|mimetypes:application/json,text/plain|max:5120',
+            'titre'         => 'required|string|max:255',
+            'temps_limite'  => 'nullable|integer|min:5|max:180',
+            'score_passage' => 'integer|min:0|max:100',
+            'ressource_id'  => 'nullable|exists:resources,id',
+        ]);
+
+        try {
+            $file = $request->file('fichier');
+            $content = file_get_contents($file->getRealPath());
+            $questionsData = json_decode($content, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json(['message' => 'Le fichier fourni n\'est pas un JSON valide.'], 422);
+            }
+
+            if (!is_array($questionsData) || empty($questionsData)) {
+                return response()->json(['message' => 'Le JSON ne contient aucune question ou n\'a pas la bonne structure en tableau.'], 422);
+            }
+
+            // Optional: check structural integrity briefly before DB transaction
+            foreach ($questionsData as $qData) {
+                if (!isset($qData['enonce']) || !isset($qData['choix']) || !is_array($qData['choix'])) {
+                    return response()->json(['message' => 'La structure du JSON (enonce, choix) n\'est pas respectée.'], 422);
+                }
+            }
+
+            // Sauvegarder en BDD
+            $quiz = DB::transaction(function () use ($validated, $questionsData, $request) {
+                $quiz = Quiz::create([
+                    'enseignant_id'     => $request->user()->id,
+                    'ressource_id'      => $validated['ressource_id'] ?? null,
+                    'titre'             => $validated['titre'],
+                    'slug'              => Str::slug($validated['titre']) . '-' . uniqid(),
+                    'temps_limite'      => $validated['temps_limite'] ?? null,
+                    'score_passage'     => $validated['score_passage'] ?? 50,
+                    'melange_questions' => true,
+                    'melange_reponses'  => true,
+                    'status'            => 'brouillon',
+                ]);
+
+                foreach ($questionsData as $ordre => $qData) {
+                    $question = $quiz->questions()->create([
+                        'enonce'      => $qData['enonce'],
+                        'difficulte'  => $qData['difficulte'] ?? 'moyen',
+                        'points'      => $qData['points'] ?? 1,
+                        'explication' => $qData['explication'] ?? null,
+                        'ordre'       => $ordre,
+                    ]);
+
+                    if (isset($qData['choix']) && is_array($qData['choix'])) {
+                        foreach ($qData['choix'] as $cOrdre => $choix) {
+                            $question->choix()->create([
+                                'texte'       => $choix['texte'] ?? 'Option vide',
+                                'est_correct' => isset($choix['est_correct']) ? (bool) $choix['est_correct'] : false,
+                                'ordre'       => $cOrdre,
+                            ]);
+                        }
+                    }
+                }
+
+                return $quiz;
+            });
+
+            return response()->json([
+                'message' => 'Quiz importé avec succès. Révisez les questions avant de publier.',
+                'quiz'    => $quiz->load('questions.choix'),
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Quiz JSON import failed', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Erreur lors de l\'importation : ' . $e->getMessage()], 500);
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Enseignant : CRUD Quiz
     // ─────────────────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ use App\Http\Controllers\TypeRessourceController;
 use App\Http\Controllers\DisciplineController;
 use App\Http\Controllers\NiveauController;
 use App\Http\Controllers\Api\QuizIaController;
+use App\Http\Controllers\Api\QcmBibliothequeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('quiz')->group(function () {
         // Routes fixes (avant les routes paramétrées pour éviter les conflits)
         Route::post('/generer',              [QuizIaController::class, 'generer']);
+        Route::post('/import-json',          [QuizIaController::class, 'importJson']);
         Route::get('/',                      [QuizIaController::class, 'index']);
         Route::get('/publies',               [QuizIaController::class, 'listerPublies']);
         Route::get('/public/{slug}',         [QuizIaController::class, 'showPublic']);
@@ -75,5 +77,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}/archiver',         [QuizIaController::class, 'archiver']);
         Route::delete('/{id}',               [QuizIaController::class, 'destroy']);
         Route::get('/{id}/statistiques',     [QuizIaController::class, 'statistiques']);
+    });
+
+    // ── QCM Bibliothèque ─────────────────────────────────────────────────
+    Route::prefix('qcm-bibliotheque')->group(function () {
+        Route::get('/meta',           [QcmBibliothequeController::class, 'meta']);
+        Route::get('/',               [QcmBibliothequeController::class, 'index']);
+        Route::post('/',              [QcmBibliothequeController::class, 'store']);
+        Route::get('/{id}',           [QcmBibliothequeController::class, 'show']);
+        Route::delete('/{id}',        [QcmBibliothequeController::class, 'destroy']);
+        Route::post('/{id}/importer', [QcmBibliothequeController::class, 'importer']);
     });
 });

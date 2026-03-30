@@ -11,7 +11,8 @@ import { Label } from '../../components/ui/label';
 import {
   PlusCircle, Upload, Brain, FileText, Clock, Users,
   Eye, Trash2, BarChart2, CheckCircle2, AlertCircle, Loader2,
-  HelpCircle, XCircle, PlayCircle, Archive,
+  HelpCircle, XCircle, PlayCircle, Archive, Database, BookOpen,
+  ChevronRight, Search,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -30,7 +31,21 @@ interface Quiz {
   created_at: string;
 }
 
+interface QcmBib {
+  id: number;
+  titre: string;
+  description?: string;
+  nb_questions: number;
+  nb_facile: number;
+  nb_moyen: number;
+  nb_difficile: number;
+  discipline?: { id: number; discipline: string };
+  niveau?: { id: number; niveau: string };
+  created_at: string;
+}
+
 type ModalStep = 'idle' | 'uploading' | 'generating' | 'done' | 'error';
+type ModalTab = 'ia' | 'bibliotheque';
 
 export default function TeacherQuizPage() {
   const router = useRouter();
@@ -49,6 +64,13 @@ export default function TeacherQuizPage() {
   const [nbQuestions, setNbQuestions] = useState(10);
   const [tempsLimite, setTempsLimite] = useState<number | ''>('');
   const [scorePassage, setScorePassage] = useState(50);
+  const [modalTab, setModalTab] = useState<ModalTab>('ia');
+
+  // Bibliothèque
+  const [qcmList, setQcmList] = useState<QcmBib[]>([]);
+  const [qcmLoading, setQcmLoading] = useState(false);
+  const [selectedQcm, setSelectedQcm] = useState<QcmBib | null>(null);
+  const [qcmSearch, setQcmSearch] = useState('');
 
   // ── Chargement des quizzes ──────────────────────────────────────
   const fetchQuizzes = async () => {
@@ -67,23 +89,31 @@ export default function TeacherQuizPage() {
     }
   };
 
+  // ── Chargement de la bibliothèque ───────────────────────────────
+  const fetchQcmBibliotheque = async () => {
+    setQcmLoading(true);
+    try {
+      const tokenToUse = token || localStorage.getItem('auth_token');
+      const res = await fetch(`${API_URL}/qcm-bibliotheque`, {
+        headers: { Authorization: `Bearer ${tokenToUse}`, Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setQcmList(data);
+    } catch {
+      setQcmList([]);
+    } finally {
+      setQcmLoading(false);
+    }
+  };
+
   useEffect(() => { fetchQuizzes(); }, []);
 
-  // ── Générer le quiz ─────────────────────────────────────────────
+  // ── Génération IA ───────────────────────────────────────────────
   const handleGenerate = async () => {
     if (!file || !titre.trim()) return;
-
-    // ── Fix : lire directement depuis localStorage ──────────
     const tokenToUse = token || localStorage.getItem('auth_token');
-
-    console.log('token from context:', token);
-    console.log('token from localStorage:', localStorage.getItem('auth_token'));
-
-    if (!tokenToUse) {
-      setStep('error');
-      setErrorMsg('Session expirée. Reconnectez-vous.');
-      return;
-    }
+    if (!tokenToUse) { setStep('error'); setErrorMsg('Session expirée. Reconnectez-vous.'); return; }
 
     setStep('uploading');
     setErrorMsg('');
@@ -97,21 +127,15 @@ export default function TeacherQuizPage() {
 
     try {
       setStep('generating');
-
-      // 5 minute timeout for AI generation
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
 
       const res = await fetch(`${API_URL}/quiz/generer`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${tokenToUse}`,
-          Accept: 'application/json'
-        },
+        headers: { Authorization: `Bearer ${tokenToUse}`, Accept: 'application/json' },
         body: formData,
         signal: controller.signal,
       });
-
       clearTimeout(timeoutId);
 
       const data = await res.json();
@@ -120,7 +144,6 @@ export default function TeacherQuizPage() {
       setStep('done');
       fetchQuizzes();
       setTimeout(() => { setShowModal(false); resetModal(); }, 2000);
-
     } catch (err: unknown) {
       setStep('error');
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -128,6 +151,41 @@ export default function TeacherQuizPage() {
       } else {
         setErrorMsg(err instanceof Error ? err.message : 'Erreur inconnue');
       }
+    }
+  };
+
+  // ── Importer depuis la bibliothèque ────────────────────────────
+  const handleBiblioImport = async () => {
+    if (!selectedQcm || !titre.trim()) return;
+    const tokenToUse = token || localStorage.getItem('auth_token');
+    if (!tokenToUse) { setStep('error'); setErrorMsg('Session expirée.'); return; }
+
+    setStep('generating');
+    setErrorMsg('');
+
+    try {
+      const body: Record<string, string | number> = { titre: titre.trim(), score_passage: scorePassage };
+      if (tempsLimite) body['temps_limite'] = Number(tempsLimite);
+
+      const res = await fetch(`${API_URL}/qcm-bibliotheque/${selectedQcm.id}/importer`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokenToUse}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erreur d\'import');
+
+      setStep('done');
+      fetchQuizzes();
+      setTimeout(() => { setShowModal(false); resetModal(); }, 2000);
+    } catch (err: unknown) {
+      setStep('error');
+      setErrorMsg(err instanceof Error ? err.message : 'Erreur inconnue');
     }
   };
 
@@ -168,14 +226,30 @@ export default function TeacherQuizPage() {
     setScorePassage(50);
     setStep('idle');
     setErrorMsg('');
+    setSelectedQcm(null);
+    setQcmSearch('');
+    setModalTab('ia');
   };
 
-  // ── Couleur badge statut ────────────────────────────────────────
+  const openModal = () => {
+    resetModal();
+    setShowModal(true);
+    fetchQcmBibliotheque();
+  };
+
+  // ── Badge statut ────────────────────────────────────────────────
   const statusBadge = (status: Quiz['status']) => {
     if (status === 'publie') return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Publié</Badge>;
     if (status === 'archive') return <Badge className="bg-gray-100 text-gray-600 border-gray-200">Archivé</Badge>;
     return <Badge className="bg-amber-100 text-amber-700 border-amber-200">Brouillon</Badge>;
   };
+
+  const filteredQcm = qcmList.filter(q =>
+    q.titre.toLowerCase().includes(qcmSearch.toLowerCase()) ||
+    (q.discipline?.discipline || '').toLowerCase().includes(qcmSearch.toLowerCase())
+  );
+
+  const canSubmitBiblio = selectedQcm && titre.trim();
 
   // ── Rendu ──────────────────────────────────────────────────────
   return (
@@ -186,16 +260,27 @@ export default function TeacherQuizPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Mes Quiz</h2>
-            <p className="text-gray-600 mt-1">Générez des quiz depuis vos documents grâce à l&apos;IA</p>
+            <p className="text-gray-600 mt-1">Générez via l&apos;IA ou depuis votre bibliothèque de QCM</p>
           </div>
-          <Button
-            id="btn-generer-quiz"
-            onClick={() => { setShowModal(true); resetModal(); }}
-            className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all hover:scale-105"
-          >
-            <Brain className="w-4 h-4 mr-2" />
-            Générer un quiz IA
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              id="btn-bibliotheque"
+              variant="outline"
+              onClick={() => router.push('/teacher/qcm-bibliotheque')}
+              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              Ma bibliothèque
+            </Button>
+            <Button
+              id="btn-generer-quiz"
+              onClick={openModal}
+              className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all hover:scale-105"
+            >
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Nouveau Quiz
+            </Button>
+          </div>
         </div>
 
         {/* Stats rapides */}
@@ -235,13 +320,10 @@ export default function TeacherQuizPage() {
               <div className="text-center py-16 border border-dashed border-gray-200 rounded-xl">
                 <Brain className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                 <p className="text-gray-500 font-medium">Aucun quiz créé</p>
-                <p className="text-sm text-gray-400 mb-5">Uploadez un document PDF ou Word pour générer votre premier quiz</p>
-                <Button
-                  onClick={() => { setShowModal(true); resetModal(); }}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <Brain className="w-4 h-4 mr-2" />
-                  Générer mon premier quiz
+                <p className="text-sm text-gray-400 mb-5">Générez votre premier quiz via l&apos;IA ou importez depuis votre bibliothèque</p>
+                <Button onClick={openModal} className="bg-emerald-600 hover:bg-emerald-700">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Créer mon premier quiz
                 </Button>
               </div>
             ) : (
@@ -251,12 +333,10 @@ export default function TeacherQuizPage() {
                     key={quiz.id}
                     className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all group"
                   >
-                    {/* Icône */}
                     <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
                       <HelpCircle className="w-5 h-5 text-emerald-600" />
                     </div>
 
-                    {/* Infos */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-gray-900 truncate">{quiz.titre}</p>
@@ -281,7 +361,6 @@ export default function TeacherQuizPage() {
                       </div>
                     </div>
 
-                     {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
                         size="sm"
@@ -341,7 +420,7 @@ export default function TeacherQuizPage() {
         </Card>
       </div>
 
-      {/* ── Modal Génération IA ────────────────────────────────────────── */}
+      {/* ── Modal Création Quiz ─────────────────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Overlay */}
@@ -351,17 +430,17 @@ export default function TeacherQuizPage() {
           />
 
           {/* Panneau */}
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-emerald-600" />
+                  {modalTab === 'ia' ? <Brain className="w-5 h-5 text-emerald-600" /> : <Database className="w-5 h-5 text-emerald-600" />}
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Générer un quiz avec l&apos;IA</h3>
-                  <p className="text-xs text-gray-400">Uploadez un document PDF ou Word</p>
+                  <h3 className="font-bold text-gray-900">Nouveau Quiz</h3>
+                  <p className="text-xs text-gray-400">Choisissez votre méthode de création</p>
                 </div>
               </div>
               {(step === 'idle' || step === 'error') && (
@@ -374,28 +453,61 @@ export default function TeacherQuizPage() {
               )}
             </div>
 
-            {/* Contenu */}
-            <div className="p-6">
+            {/* Onglets */}
+            {step === 'idle' && (
+              <div className="flex border-b border-gray-100 flex-shrink-0">
+                <button
+                  onClick={() => setModalTab('ia')}
+                  className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 ${modalTab === 'ia' ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    Générer avec l&apos;IA
+                  </div>
+                </button>
+                <button
+                  onClick={() => setModalTab('bibliotheque')}
+                  className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 ${modalTab === 'bibliotheque' ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Database className="w-4 h-4" />
+                    Depuis ma bibliothèque
+                    {qcmList.length > 0 && (
+                      <span className="ml-1 text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5">{qcmList.length}</span>
+                    )}
+                  </div>
+                </button>
+              </div>
+            )}
 
-              {/* States */}
+            {/* Contenu scrollable */}
+            <div className="p-6 overflow-y-auto flex-1">
+
+              {/* États de chargement / done / error */}
               {step === 'uploading' || step === 'generating' ? (
                 <div className="text-center py-10">
                   <div className="relative w-16 h-16 mx-auto mb-4">
                     <div className="absolute inset-0 rounded-full border-4 border-emerald-100" />
                     <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
-                    <Brain className="absolute inset-0 m-auto w-6 h-6 text-emerald-600" />
+                    {modalTab === 'ia'
+                      ? <Brain className="absolute inset-0 m-auto w-6 h-6 text-emerald-600" />
+                      : <Database className="absolute inset-0 m-auto w-6 h-6 text-emerald-600" />}
                   </div>
                   <p className="font-semibold text-gray-900">
-                    {step === 'uploading' ? 'Envoi du document…' : 'L’IA génère vos questions…'}
+                    {modalTab === 'ia'
+                      ? (step === 'uploading' ? 'Envoi du document…' : 'L&apos;IA génère vos questions…')
+                      : 'Création du quiz depuis la bibliothèque…'}
                   </p>
-                  <p className="text-sm text-gray-400 mt-1">Cela peut prendre 10–30 secondes</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {modalTab === 'ia' ? 'Cela peut prendre 10–30 secondes' : 'Veuillez patienter'}
+                  </p>
                 </div>
               ) : step === 'done' ? (
                 <div className="text-center py-10">
                   <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
                     <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                   </div>
-                  <p className="font-semibold text-gray-900">Quiz généré avec succès !</p>
+                  <p className="font-semibold text-gray-900">Quiz créé avec succès !</p>
                   <p className="text-sm text-gray-400 mt-1">Révisez les questions avant de publier</p>
                 </div>
               ) : step === 'error' ? (
@@ -403,34 +515,29 @@ export default function TeacherQuizPage() {
                   <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
                     <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-red-700 text-sm">Erreur de génération</p>
+                      <p className="font-medium text-red-700 text-sm">Erreur</p>
                       <p className="text-xs text-red-500 mt-0.5">{errorMsg}</p>
                     </div>
                   </div>
-                  <Button
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => setStep('idle')}
-                  >
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => setStep('idle')}>
                     Réessayer
                   </Button>
                 </div>
-              ) : (
-                // Form idle
+
+              ) : modalTab === 'ia' ? (
+                /* ── Onglet IA ── */
                 <div className="space-y-5">
                   {/* Fichier */}
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Document source *</Label>
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${file
-                          ? 'border-emerald-400 bg-emerald-50'
-                          : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50'
-                        }`}
+                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${file ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50'}`}
                     >
                       {file ? (
                         <div className="flex items-center justify-center gap-2">
                           <FileText className="w-5 h-5 text-emerald-600" />
-                          <span className="text-sm font-medium text-emerald-700 truncate max-w-[200px]">{file.name}</span>
+                          <span className="text-sm font-medium text-emerald-700 truncate max-w-[280px]">{file.name}</span>
                         </div>
                       ) : (
                         <>
@@ -440,61 +547,33 @@ export default function TeacherQuizPage() {
                         </>
                       )}
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    />
+                    <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden"
+                      onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                   </div>
 
                   {/* Titre */}
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Titre du quiz *</Label>
-                    <Input
-                      placeholder="Ex: Quiz — Introduction au Machine Learning"
-                      value={titre}
-                      onChange={(e) => setTitre(e.target.value)}
-                    />
+                    <Input placeholder="Ex: Quiz — Introduction au Machine Learning" value={titre} onChange={(e) => setTitre(e.target.value)} />
                   </div>
 
-                  {/* Paramètres en grille */}
+                  {/* Paramètres */}
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">Nb questions</Label>
-                      <Input
-                        type="number"
-                        min={3}
-                        max={30}
-                        value={nbQuestions}
-                        onChange={(e) => setNbQuestions(Number(e.target.value))}
-                      />
+                      <Input type="number" min={3} max={30} value={nbQuestions} onChange={(e) => setNbQuestions(Number(e.target.value))} />
                     </div>
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">Temps (min)</Label>
-                      <Input
-                        type="number"
-                        min={5}
-                        max={180}
-                        placeholder="Illimité"
-                        value={tempsLimite}
-                        onChange={(e) => setTempsLimite(e.target.value ? Number(e.target.value) : '')}
-                      />
+                      <Input type="number" min={5} max={180} placeholder="Illimité" value={tempsLimite}
+                        onChange={(e) => setTempsLimite(e.target.value ? Number(e.target.value) : '')} />
                     </div>
                     <div>
                       <Label className="text-xs text-gray-500 mb-1 block">Score passage %</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={scorePassage}
-                        onChange={(e) => setScorePassage(Number(e.target.value))}
-                      />
+                      <Input type="number" min={0} max={100} value={scorePassage} onChange={(e) => setScorePassage(Number(e.target.value))} />
                     </div>
                   </div>
 
-                  {/* Bouton */}
                   <Button
                     id="btn-lancer-generation"
                     className="w-full bg-emerald-600 hover:bg-emerald-700 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-200"
@@ -502,8 +581,121 @@ export default function TeacherQuizPage() {
                     onClick={handleGenerate}
                   >
                     <Brain className="w-4 h-4 mr-2" />
-                    Générer le quiz avec l’IA
+                    Générer le quiz avec l&apos;IA
                   </Button>
+                </div>
+
+              ) : (
+                /* ── Onglet Bibliothèque ── */
+                <div className="space-y-4">
+                  {qcmLoading ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="w-7 h-7 text-emerald-600 animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-gray-400">Chargement de la bibliothèque…</p>
+                    </div>
+                  ) : qcmList.length === 0 ? (
+                    <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl">
+                      <Database className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                      <p className="text-gray-500 font-medium">Bibliothèque vide</p>
+                      <p className="text-sm text-gray-400 mt-1 mb-4">Ajoutez des QCM depuis la page bibliothèque</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setShowModal(false); router.push('/teacher/qcm-bibliotheque'); }}
+                        className="border-emerald-200 text-emerald-700"
+                      >
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Aller à ma bibliothèque
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Recherche */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          placeholder="Rechercher un QCM…"
+                          value={qcmSearch}
+                          onChange={(e) => setQcmSearch(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+
+                      {/* Liste QCM */}
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {filteredQcm.length === 0 ? (
+                          <p className="text-center text-sm text-gray-400 py-4">Aucun résultat</p>
+                        ) : filteredQcm.map(qcm => (
+                          <button
+                            key={qcm.id}
+                            onClick={() => setSelectedQcm(selectedQcm?.id === qcm.id ? null : qcm)}
+                            className={`w-full text-left p-3 rounded-xl border transition-all ${selectedQcm?.id === qcm.id
+                              ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-300'
+                              : 'border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30'
+                              }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${selectedQcm?.id === qcm.id ? 'bg-emerald-200' : 'bg-gray-100'}`}>
+                                  <FileText className={`w-4 h-4 ${selectedQcm?.id === qcm.id ? 'text-emerald-700' : 'text-gray-500'}`} />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm text-gray-900 truncate">{qcm.titre}</p>
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                    <span className="text-xs text-gray-500">{qcm.nb_questions} questions</span>
+                                    {qcm.discipline && <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{qcm.discipline.discipline}</span>}
+                                    {qcm.niveau && <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{qcm.niveau.niveau}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform ${selectedQcm?.id === qcm.id ? 'text-emerald-500 rotate-90' : 'text-gray-300'}`} />
+                            </div>
+
+                            {/* Stats difficulté */}
+                            {selectedQcm?.id === qcm.id && (
+                              <div className="flex gap-2 mt-2 pt-2 border-t border-emerald-100">
+                                {qcm.nb_facile > 0 && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{qcm.nb_facile} facile</span>}
+                                {qcm.nb_moyen > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{qcm.nb_moyen} moyen</span>}
+                                {qcm.nb_difficile > 0 && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{qcm.nb_difficile} difficile</span>}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Formulaire si un QCM est sélectionné */}
+                      {selectedQcm && (
+                        <div className="space-y-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Paramètres du quiz</p>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Titre du quiz *</Label>
+                            <Input placeholder={`Quiz — ${selectedQcm.titre}`} value={titre} onChange={(e) => setTitre(e.target.value)} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs text-gray-500 mb-1 block">Temps limite (min)</Label>
+                              <Input type="number" min={5} max={180} placeholder="Illimité" value={tempsLimite}
+                                onChange={(e) => setTempsLimite(e.target.value ? Number(e.target.value) : '')} />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500 mb-1 block">Score de passage %</Label>
+                              <Input type="number" min={0} max={100} value={scorePassage} onChange={(e) => setScorePassage(Number(e.target.value))} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        id="btn-creer-depuis-biblio"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-200"
+                        disabled={!canSubmitBiblio}
+                        onClick={handleBiblioImport}
+                      >
+                        <Database className="w-4 h-4 mr-2" />
+                        Créer le quiz depuis ce QCM
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
