@@ -15,6 +15,7 @@ class Quiz extends Model
         'ressource_id',
         'titre',
         'slug',
+        'code',
         'description',
         'temps_limite',
         'score_passage',

@@ -8,12 +8,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
-import { BookOpen, Award, TrendingUp, Clock, Play, AlertCircle, XCircle } from 'lucide-react';
+import { Input } from '../components/ui/input';
+import { BookOpen, Award, TrendingUp, Clock, Play, AlertCircle, XCircle, ArrowRight, Loader2 } from 'lucide-react';
+
+const API_URL = 'http://localhost:8000/api';
 
 export default function StudentDashboard() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Rejoindre un quiz
+  const [quizCode, setQuizCode] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState('');
+
+  const handleJoinQuiz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quizCode.trim()) return;
+    
+    setJoinLoading(true);
+    setJoinError('');
+
+    try {
+      const authHeader = { Authorization: `Bearer ${token || localStorage.getItem('auth_token')}`, 'Content-Type': 'application/json', Accept: 'application/json' };
+      const res = await fetch(`${API_URL}/quiz/public/code/${quizCode.trim().toUpperCase()}`, {
+        headers: authHeader,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Code invalide ou quiz non trouvé.');
+      }
+
+      // Rediriger vers le quiz
+      router.push(`/quiz/${data.slug}`);
+    } catch (err: unknown) {
+      setJoinError(err instanceof Error ? err.message : 'Erreur réseau.');
+    } finally {
+      setJoinLoading(false);
+    }
+  };
 
   // Mock data
   const stats = [
@@ -36,9 +72,32 @@ export default function StudentDashboard() {
   return (
     <Layout role="student" onSearch={handleSearch}>
       <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Bienvenue, {user?.prenom || 'Apprenant'}!</h2>
-          <p className="text-gray-600 mt-1">Continuez votre parcours d&apos;apprentissage</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Bienvenue, {user?.prenom || 'Apprenant'}!</h2>
+            <p className="text-gray-600 mt-1">Continuez votre parcours d&apos;apprentissage</p>
+          </div>
+
+          <form onSubmit={handleJoinQuiz} className="flex items-start gap-2 max-w-sm w-full">
+            <div className="flex-1">
+              <Input
+                placeholder="Entrez un code de quiz..."
+                value={quizCode}
+                onChange={(e) => setQuizCode(e.target.value.toUpperCase())}
+                className="uppercase"
+                maxLength={10}
+              />
+              {joinError && <p className="text-xs text-red-500 mt-1 font-medium">{joinError}</p>}
+            </div>
+            <Button
+              type="submit"
+              disabled={joinLoading || !quizCode.trim()}
+              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+            >
+              {joinLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+              Rejoindre
+            </Button>
+          </form>
         </div>
 
         {/* Stats Grid */}

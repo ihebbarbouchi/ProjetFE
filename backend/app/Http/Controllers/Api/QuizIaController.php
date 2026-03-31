@@ -273,10 +273,21 @@ class QuizIaController extends Controller
             return response()->json(['message' => 'Impossible de publier un quiz sans questions.'], 422);
         }
 
-        $quiz->update([
+        $updateData = [
             'status'    => 'publie',
             'publie_le' => now(),
-        ]);
+        ];
+
+        // Générer un code unique s'il n'existe pas
+        if (!$quiz->code) {
+            $code = strtoupper(Str::random(6));
+            while (Quiz::where('code', $code)->exists()) {
+                $code = strtoupper(Str::random(6));
+            }
+            $updateData['code'] = $code;
+        }
+
+        $quiz->update($updateData);
 
         return response()->json([
             'message' => 'Quiz publié avec succès.',
@@ -464,6 +475,26 @@ class QuizIaController extends Controller
         $quiz->peut_tenter       = $peutTenter;
 
         return response()->json($quiz);
+    }
+
+    /**
+     * GET /api/quiz/public/code/{code}
+     * Récupère un quiz publié pour un apprenant via son code d'accès.
+     */
+    public function showPublicByCode(Request $request, string $code): JsonResponse
+    {
+        $quiz = Quiz::where('code', $code)
+            ->where('status', 'publie')
+            ->first();
+
+        if (!$quiz) {
+            return response()->json(['message' => 'Code de quiz invalide ou quiz non publié.'], 404);
+        }
+
+        return response()->json([
+            'slug' => $quiz->slug,
+            'titre' => $quiz->titre
+        ]);
     }
 
     /**

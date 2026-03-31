@@ -9,8 +9,15 @@ import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import {
   HelpCircle, Clock, Award, Loader2, Search, PlayCircle, AlertCircle,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Lock
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
 import { useAuth } from '../../context/AuthContext';
 
 const API_URL = 'http://localhost:8000/api';
@@ -42,6 +49,53 @@ export default function StudentQuizListPage() {
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  // Pour le test du code
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizItem | null>(null);
+  const [enteredCode, setEnteredCode] = useState('');
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeError, setCodeError] = useState('');
+
+  const handleQuizClick = (quiz: QuizItem) => {
+    // Si déjà tenté ou réussi, on laisse passer (ils l'ont déjà débloqué ou n'ont plus de tentatives)
+    if (quiz.ma_tentative) {
+      router.push(`/quiz/${quiz.slug}`);
+    } else {
+      setSelectedQuiz(quiz);
+      setEnteredCode('');
+      setCodeError('');
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enteredCode.trim() || !selectedQuiz) return;
+
+    setCodeLoading(true);
+    setCodeError('');
+
+    try {
+      const res = await fetch(`${API_URL}/quiz/public/code/${enteredCode.trim().toUpperCase()}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Code invalide.');
+      }
+
+      if (data.slug !== selectedQuiz.slug) {
+        throw new Error('Ce code ne correspond pas à ce quiz.');
+      }
+
+      // Succès: on redirige
+      router.push(`/quiz/${selectedQuiz.slug}`);
+    } catch (err: unknown) {
+      setCodeError(err instanceof Error ? err.message : 'Erreur de vérification.');
+    } finally {
+      setCodeLoading(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -113,7 +167,7 @@ export default function StudentQuizListPage() {
               <Card
                 key={quiz.id}
                 className="hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group"
-                onClick={() => router.push(`/quiz/${quiz.slug}`)}
+                onClick={() => handleQuizClick(quiz)}
               >
                 <CardContent className="p-5">
                   {/* En-tête avec Icône et Badge Résultat */}
@@ -161,9 +215,9 @@ export default function StudentQuizListPage() {
                       id={`btn-commencer-quiz-${quiz.id}`}
                       className="w-full bg-blue-600 hover:bg-blue-700 transition-all"
                       size="sm"
-                      onClick={(e) => { e.stopPropagation(); router.push(`/quiz/${quiz.slug}`); }}
+                      onClick={(e) => { e.stopPropagation(); handleQuizClick(quiz); }}
                     >
-                      <PlayCircle className="w-4 h-4 mr-2" />
+                      {quiz.ma_tentative ? <PlayCircle className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
                       {quiz.ma_tentative ? 'Réessayer' : 'Commencer le quiz'}
                     </Button>
                   ) : (
@@ -190,6 +244,38 @@ export default function StudentQuizListPage() {
             </p>
           </div>
         )}
+
+        {/* Modal de vérification du code */}
+        <Dialog open={!!selectedQuiz} onOpenChange={(open) => !open && setSelectedQuiz(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Code secret requis</DialogTitle>
+              <DialogDescription>
+                Ce quiz est protégé. Veuillez entrer le code d&apos;accès fourni par votre enseignant pour &laquo; {selectedQuiz?.titre} &raquo;.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleVerifyCode} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Input
+                  placeholder="Code à 6 caractères, ex: A7V9XK"
+                  value={enteredCode}
+                  onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                  className="uppercase text-center text-lg tracking-widest font-mono"
+                  maxLength={10}
+                  autoFocus
+                />
+                {codeError && <p className="text-xs text-red-500 font-medium text-center">{codeError}</p>}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setSelectedQuiz(null)}>Annuler</Button>
+                <Button type="submit" disabled={codeLoading || !enteredCode.trim()} className="bg-blue-600 hover:bg-blue-700">
+                  {codeLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Déverrouiller
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

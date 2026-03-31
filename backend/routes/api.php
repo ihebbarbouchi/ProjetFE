@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/import-json',          [QuizIaController::class, 'importJson']);
         Route::get('/',                      [QuizIaController::class, 'index']);
         Route::get('/publies',               [QuizIaController::class, 'listerPublies']);
+        Route::get('/public/code/{code}',    [QuizIaController::class, 'showPublicByCode']);
         Route::get('/public/{slug}',         [QuizIaController::class, 'showPublic']);
         Route::post('/public/{slug}/soumettre', [QuizIaController::class, 'soumettre']);
 

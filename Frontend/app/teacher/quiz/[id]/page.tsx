@@ -40,6 +40,7 @@ interface QuizDetail {
   id: number;
   titre: string;
   slug: string;
+  code: string | null;
   description: string | null;
   temps_limite: number | null;
   score_passage: number;
@@ -184,8 +185,8 @@ export default function TeacherQuizDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      setQuiz(prev => prev ? { ...prev, status: 'publie' } : prev);
-      showToast('success', 'Quiz publié ! Les apprenants peuvent maintenant y accéder.');
+      setQuiz(data.quiz);
+      showToast('success', 'Quiz publié ! Les apprenants peuvent maintenant y accéder via votre lien ou le code : ' + data.quiz.code);
     } catch (e: unknown) {
       showToast('error', e instanceof Error ? e.message : 'Erreur lors de la publication.');
     } finally {
@@ -308,6 +309,14 @@ export default function TeacherQuizDetailPage() {
                 {quiz.questions?.length ?? 0} questions · Score passage : {quiz.score_passage}%
                 {quiz.temps_limite && ` · ${quiz.temps_limite} min`}
               </p>
+              {quiz.status === 'publie' && quiz.code && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Code d'accès apprenant :</span>
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1 text-base font-mono cursor-pointer hover:bg-emerald-100 transition-colors" title="Cliquez pour flouter/déflouter">
+                    {quiz.code}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
 
