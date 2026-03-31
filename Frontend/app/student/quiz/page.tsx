@@ -12,12 +12,11 @@ import {
   CheckCircle2, XCircle, Lock
 } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from '../../components/ui/modal';
 import { useAuth } from '../../context/AuthContext';
 
 const API_URL = 'http://localhost:8000/api';
@@ -246,36 +245,58 @@ export default function StudentQuizListPage() {
         )}
 
         {/* Modal de vérification du code */}
-        <Dialog open={!!selectedQuiz} onOpenChange={(open) => !open && setSelectedQuiz(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Code secret requis</DialogTitle>
-              <DialogDescription>
-                Ce quiz est protégé. Veuillez entrer le code d&apos;accès fourni par votre enseignant pour &laquo; {selectedQuiz?.titre} &raquo;.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleVerifyCode} className="space-y-4 mt-4">
-              <div className="space-y-2">
+        <Modal open={!!selectedQuiz} onOpenChange={(open) => !open && setSelectedQuiz(null)} size="sm">
+          <ModalHeader onClose={() => setSelectedQuiz(null)}>
+            Code secret requis
+          </ModalHeader>
+          <form onSubmit={handleVerifyCode}>
+            <ModalBody>
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <p className="text-sm text-gray-500">
+                  Ce quiz est protégé. Entrez le code d'accès fourni par votre enseignant pour déverrouiller <br/>
+                  <span className="font-semibold text-gray-900 mt-1 block">« {selectedQuiz?.titre} »</span>
+                </p>
+              </div>
+              <div className="space-y-3">
                 <Input
-                  placeholder="Code à 6 caractères, ex: A7V9XK"
+                  placeholder="EX: A7V9XK"
                   value={enteredCode}
                   onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
-                  className="uppercase text-center text-lg tracking-widest font-mono"
+                  className="uppercase text-center text-2xl tracking-[0.25em] font-mono h-14 bg-gray-50 border-gray-300 focus-visible:ring-blue-600 rounded-xl"
                   maxLength={10}
                   autoFocus
                 />
-                {codeError && <p className="text-xs text-red-500 font-medium text-center">{codeError}</p>}
+                {codeError && (
+                  <div className="flex items-center justify-center gap-1.5 text-red-600 bg-red-50 py-2 px-3 rounded-lg text-sm font-medium">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <p>{codeError}</p>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setSelectedQuiz(null)}>Annuler</Button>
-                <Button type="submit" disabled={codeLoading || !enteredCode.trim()} className="bg-blue-600 hover:bg-blue-700">
-                  {codeLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Déverrouiller
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </ModalBody>
+            <ModalFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1 h-11 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl" 
+                onClick={() => setSelectedQuiz(null)}
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={codeLoading || !enteredCode.trim()} 
+                className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-200 transition-all font-medium"
+              >
+                {codeLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Lock className="w-4 h-4 mr-2" />}
+                Déverrouiller
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
       </div>
     </Layout>
   );
