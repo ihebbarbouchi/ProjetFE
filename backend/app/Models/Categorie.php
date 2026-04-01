@@ -21,6 +21,7 @@ class Categorie extends Model
         'custom_discipline',
         'custom_niveau',
         'custom_types',
+        'image_path',
     ];
 
     protected $casts = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '../../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -17,7 +17,7 @@ import {
     ModalCancelButton,
     ModalConfirmButton,
 } from '../../components/ui/modal';
-import { Plus, FolderOpen, Clock, CheckCircle, Loader2, Send, XCircle } from 'lucide-react';
+import { Plus, FolderOpen, Clock, CheckCircle, Loader2, Send, XCircle, PlusCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 
@@ -57,21 +57,22 @@ export default function TeacherCategories() {
     const [description, setDescription] = useState('');
     const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
     const [customTypes, setCustomTypes] = useState<string[]>(['']);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
     };
 
     const fetchAll = async () => {
         setIsLoading(true);
         try {
             const [catRes, discRes, nivRes, typeRes] = await Promise.all([
-                fetch(`${API_URL}/list-categories?status=all`, { headers }),
-                fetch(`${API_URL}/admin/disciplines`, { headers }),
-                fetch(`${API_URL}/admin/niveaux`, { headers }),
-                fetch(`${API_URL}/admin/types-ressources`, { headers }),
+                fetch(`${API_URL}/list-categories?status=all`, { headers: { ...headers, 'Content-Type': 'application/json' } }),
+                fetch(`${API_URL}/admin/disciplines`, { headers: { ...headers, 'Content-Type': 'application/json' } }),
+                fetch(`${API_URL}/admin/niveaux`, { headers: { ...headers, 'Content-Type': 'application/json' } }),
+                fetch(`${API_URL}/admin/types-ressources`, { headers: { ...headers, 'Content-Type': 'application/json' } }),
             ]);
             if (catRes.ok) setCategories(await catRes.json());
             if (discRes.ok) setDisciplines(await discRes.json());
@@ -91,6 +92,7 @@ export default function TeacherCategories() {
         setNiveauId(''); setCustomNiveau('');
         setCode(''); setDescription('');
         setSelectedTypes([]); setCustomTypes(['']);
+        setSelectedImage(null);
     };
 
     const toggleType = (id: number) => {
@@ -106,25 +108,27 @@ export default function TeacherCategories() {
         }
         setIsSubmitting(true);
         try {
-            const payload: Record<string, unknown> = {
-                code: code.toUpperCase(),
-                description,
-                types: selectedTypes,
-                custom_types: customTypes.filter(t => t.trim() !== ''),
-            };
-            if (disciplineId && disciplineId !== 'other') {
-                payload.discipline_id = Number(disciplineId);
-            } else {
-                payload.custom_discipline = customDiscipline.trim();
-            }
-            if (niveauId && niveauId !== 'other') {
-                payload.niveau_id = Number(niveauId);
-            } else if (customNiveau.trim()) {
-                payload.custom_niveau = customNiveau.trim();
+            const formData = new FormData();
+            formData.append('code', code.toUpperCase());
+            formData.append('description', description);
+            
+            selectedTypes.forEach(id => formData.append('types[]', String(id)));
+            customTypes.filter(t => t.trim() !== '').forEach(t => formData.append('custom_types[]', t));
+            
+            if (disciplineId && disciplineId !== 'other') formData.append('discipline_id', disciplineId);
+            else formData.append('custom_discipline', customDiscipline.trim());
+
+            if (niveauId && niveauId !== 'other') formData.append('niveau_id', niveauId);
+            else if (customNiveau.trim()) formData.append('custom_niveau', customNiveau.trim());
+
+            if (selectedImage) {
+                formData.append('image', selectedImage);
             }
 
             const res = await fetch(`${API_URL}/suggest-category`, {
-                method: 'POST', headers, body: JSON.stringify(payload),
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }, 
+                body: formData,
             });
             if (res.ok) {
                 toast.success('Suggestion envoyée ! En attente d\'approbation.');
@@ -173,7 +177,7 @@ export default function TeacherCategories() {
                 {/* Stat cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                        { label: 'Total',       value: categories.length,                                             icon: FolderOpen,    color: 'violet',  bg: 'violet'  },
+                        { label: 'Total',       value: categories.length,                                             icon: FolderOpen,    color: 'emerald', bg: 'emerald'  },
                         { label: 'Approuvées',  value: categories.filter(c => c.statut === 'approved').length,        icon: CheckCircle,   color: 'emerald', bg: 'emerald' },
                         { label: 'En attente',  value: categories.filter(c => c.statut === 'pending').length,         icon: Clock,         color: 'amber',   bg: 'amber'   },
                     ].map(s => (
@@ -193,7 +197,7 @@ export default function TeacherCategories() {
                 {/* Filter */}
                 <div className="flex gap-2">
                     {[
-                        { key: 'all',      label: 'Toutes',     activeClass: 'bg-violet-600 text-white shadow' },
+                        { key: 'all',      label: 'Toutes',     activeClass: 'bg-emerald-600 text-white shadow' },
                         { key: 'approved', label: 'Approuvées', activeClass: 'bg-emerald-600 text-white shadow' },
                         { key: 'pending',  label: 'En attente', activeClass: 'bg-amber-500 text-white shadow'   },
                     ].map(f => (
@@ -368,6 +372,44 @@ export default function TeacherCategories() {
                                     >
                                         + Ajouter un type personnalisé
                                     </Button>
+                                </div>
+                            </div>
+
+                            {/* Photo de catégorie */}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-gray-400 uppercase ml-1">Photo d'illustration</Label>
+                                <div 
+                                    onClick={() => imageInputRef.current?.click()}
+                                    className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all ${selectedImage ? 'border-emerald-400 bg-emerald-50/30' : 'border-gray-100 bg-gray-50/50 hover:border-emerald-200'}`}
+                                >
+                                    <input 
+                                        type="file" 
+                                        ref={imageInputRef} 
+                                        onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+                                        accept="image/*" 
+                                        className="hidden" 
+                                    />
+                                    {selectedImage ? (
+                                        <div className="flex items-center gap-3 w-full">
+                                            <img 
+                                                src={URL.createObjectURL(selectedImage)} 
+                                                alt="Preview" 
+                                                className="w-12 h-12 rounded-lg object-cover" 
+                                            />
+                                            <span className="text-xs text-emerald-600 font-bold truncate flex-1">{selectedImage.name}</span>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+                                                className="p-1 hover:bg-white rounded-full text-emerald-400"
+                                            >
+                                                <XCircle className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center py-2">
+                                            <PlusCircle className="w-6 h-6 text-emerald-400 mb-1" />
+                                            <p className="text-[10px] text-gray-400 font-bold">Ajouter une image</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

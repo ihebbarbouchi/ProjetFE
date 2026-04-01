@@ -42,6 +42,7 @@ export default function AddResource() {
     const router = useRouter();
     const { token } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
     
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [title, setTitle] = useState('');
@@ -51,6 +52,7 @@ export default function AddResource() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Charger les catégories depuis la base de données
@@ -82,6 +84,10 @@ export default function AddResource() {
         fileInputRef.current?.click();
     };
 
+    const handleImageClick = () => {
+        imageInputRef.current?.click();
+    };
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -90,6 +96,17 @@ export default function AddResource() {
                 return;
             }
             setSelectedFile(file);
+        }
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (!file.type.startsWith('image/')) {
+                toast.error("Seulement les images sont autorisées");
+                return;
+            }
+            setSelectedImage(file);
         }
     };
 
@@ -109,13 +126,29 @@ export default function AddResource() {
         formData.append('categorie_id', categoryId);
         formData.append('visibilite', visibility);
         formData.append('fichier', selectedFile);
+        if (selectedImage) {
+            formData.append('image', selectedImage);
+        }
 
         try {
-            // Ici l'appel API vers votre store de ressources
+            const res = await fetch(`${API_URL}/resources`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.message || "Erreur lors de la publication");
+            }
+
             toast.success("Ressource publiée avec succès !");
             router.push('/teacher');
-        } catch (error) {
-            toast.error("Erreur lors de la publication");
+        } catch (error: any) {
+            toast.error(error.message || "Erreur lors de la publication");
         } finally {
             setIsSubmitting(false);
         }
@@ -182,7 +215,57 @@ export default function AddResource() {
                         </Select>
                     </div>
 
-                    {/* Section 2: Téléchargement Actif */}
+                    {/* Section 2: Photo de couverture */}
+                    <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-50 space-y-6">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                <UploadCloud className="w-6 h-6 text-emerald-500" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-bold text-gray-800">Photo de couverture (facultatif)</h3>
+                                <p className="text-sm text-gray-500">Ajoutez une image pour illustrer votre ressource.</p>
+                            </div>
+                        </div>
+
+                        <input 
+                            type="file" 
+                            ref={imageInputRef} 
+                            onChange={handleImageChange} 
+                            accept="image/*" 
+                            className="hidden" 
+                        />
+
+                        <div 
+                            onClick={handleImageClick}
+                            className={`border-2 border-dashed rounded-[28px] p-6 flex flex-col items-center justify-center space-y-3 transition-all cursor-pointer ${
+                                selectedImage 
+                                ? 'border-emerald-500 bg-emerald-50/20' 
+                                : 'border-gray-100 bg-gray-50/30 hover:bg-emerald-50/10 hover:border-emerald-200'
+                            }`}
+                        >
+                            {selectedImage ? (
+                                <div className="relative w-full h-32 rounded-2xl overflow-hidden">
+                                    <img 
+                                        src={URL.createObjectURL(selectedImage)} 
+                                        alt="Preview" 
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                        <p className="text-white text-xs font-bold">Changer l'image</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+                                        <UploadCloud className="w-6 h-6 text-emerald-500" />
+                                    </div>
+                                    <p className="text-sm text-gray-400">Cliquez pour ajouter une photo</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Section 3: Téléchargement PDF */}
                     <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-50 space-y-6">
                         <div className="flex items-start gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -239,7 +322,7 @@ export default function AddResource() {
                         </div>
                     </div>
 
-                    {/* Section 3: Informations */}
+                    {/* Section 4: Informations */}
                     <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-50 space-y-6">
                         <div className="flex items-start gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -274,7 +357,7 @@ export default function AddResource() {
                         </div>
                     </div>
 
-                    {/* Section 4: Visibilité */}
+                    {/* Section 5: Visibilité */}
                     <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-50 space-y-6">
                         <div className="flex items-start gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0">

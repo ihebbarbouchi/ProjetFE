@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '../../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -60,11 +60,12 @@ export default function AdminCategories() {
     const [description, setDescription] = useState('');
     const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
     const [customTypes, setCustomTypes] = useState<string[]>(['']);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
     };
 
     const fetchCategories = async () => {
@@ -92,6 +93,7 @@ export default function AdminCategories() {
         setNiveauId(''); setCustomNiveau('');
         setCode(''); setDescription('');
         setSelectedTypes([]); setCustomTypes(['']);
+        setSelectedImage(null);
     };
 
     const handleCreate = async () => {
@@ -101,20 +103,27 @@ export default function AdminCategories() {
         }
         setIsSubmitting(true);
         try {
-            const payload: any = {
-                code: code.toUpperCase(),
-                description,
-                types: selectedTypes,
-                custom_types: customTypes.filter(t => t.trim() !== ''),
-            };
-            if (disciplineId && disciplineId !== 'other') payload.discipline_id = Number(disciplineId);
-            else payload.custom_discipline = customDiscipline.trim();
+            const formData = new FormData();
+            formData.append('code', code.toUpperCase());
+            formData.append('description', description);
+            
+            selectedTypes.forEach(id => formData.append('types[]', String(id)));
+            customTypes.filter(t => t.trim() !== '').forEach(t => formData.append('custom_types[]', t));
+            
+            if (disciplineId && disciplineId !== 'other') formData.append('discipline_id', disciplineId);
+            else formData.append('custom_discipline', customDiscipline.trim());
 
-            if (niveauId && niveauId !== 'other') payload.niveau_id = Number(niveauId);
-            else if (customNiveau.trim()) payload.custom_niveau = customNiveau.trim();
+            if (niveauId && niveauId !== 'other') formData.append('niveau_id', niveauId);
+            else if (customNiveau.trim()) formData.append('custom_niveau', customNiveau.trim());
+
+            if (selectedImage) {
+                formData.append('image', selectedImage);
+            }
 
             const res = await fetch(`${API_URL}/admin/categories`, {
-                method: 'POST', headers, body: JSON.stringify(payload),
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }, 
+                body: formData,
             });
             if (res.ok) {
                 toast.success('Catégorie créée avec succès !');
@@ -195,7 +204,7 @@ export default function AdminCategories() {
                     </div>
                     <Button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-violet-600 hover:bg-violet-700 shadow-md flex items-center gap-2 h-11 px-6 rounded-xl font-semibold transition-all hover:scale-[1.02]"
+                        className="bg-emerald-600 hover:bg-emerald-700 shadow-md flex items-center gap-2 h-11 px-6 rounded-xl font-semibold transition-all hover:scale-[1.02]"
                     >
                         <Plus className="w-5 h-5" />
                         Ajouter une catégorie
@@ -207,7 +216,7 @@ export default function AdminCategories() {
                     {[
                         { label: 'Approuvées', value: counts.approved, color: 'emerald' },
                         { label: 'En attente', value: counts.pending, color: 'amber' },
-                        { label: 'Total', value: counts.total, color: 'violet' },
+                        { label: 'Total', value: counts.total, color: 'emerald' },
                         { label: 'Types liés', value: counts.types, color: 'indigo' },
                     ].map(s => (
                         <Card key={s.label} className="rounded-2xl border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
@@ -240,7 +249,7 @@ export default function AdminCategories() {
                             <button
                                 key={f.key}
                                 onClick={() => setStatusFilter(f.key)}
-                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${statusFilter === f.key ? 'bg-violet-600 text-white shadow' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
+                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${statusFilter === f.key ? 'bg-emerald-600 text-white shadow' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
                             >
                                 {f.label}
                             </button>
@@ -258,7 +267,7 @@ export default function AdminCategories() {
                     <CardContent className="p-0">
                         {isLoading ? (
                             <div className="flex justify-center items-center py-16">
-                                <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                                <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                             </div>
                         ) : filtered.length === 0 ? (
                             <div className="text-center py-16">
@@ -289,7 +298,7 @@ export default function AdminCategories() {
                                                 <td className="px-6 py-4">
                                                     <span className="text-gray-700">{cat.discipline_name ?? '—'}</span>
                                                     {cat.custom_discipline && (
-                                                        <span className="ml-1 text-xs text-violet-500 font-medium">(custom)</span>
+                                                        <span className="ml-1 text-xs text-emerald-500 font-medium">(custom)</span>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-gray-600">{cat.niveau_name ?? '—'}</td>
@@ -429,7 +438,7 @@ export default function AdminCategories() {
                                             key={t.id}
                                             type="button"
                                             onClick={() => toggleType(t.id)}
-                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedTypes.includes(t.id) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedTypes.includes(t.id) ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'}`}
                                         >
                                             {t.type_ressource}
                                         </button>
@@ -455,10 +464,48 @@ export default function AdminCategories() {
                                     <button
                                         type="button"
                                         onClick={() => setCustomTypes([...customTypes, ''])}
-                                        className="text-xs text-violet-600 font-medium hover:underline flex items-center gap-1"
+                                        className="text-xs text-emerald-600 font-medium hover:underline flex items-center gap-1"
                                     >
                                         <PlusCircle className="w-3 h-3" /> Ajouter un type
                                     </button>
+                                </div>
+                            </div>
+
+                            {/* Photo de catégorie */}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-gray-400 uppercase ml-1">Photo de la catégorie</Label>
+                                <div 
+                                    onClick={() => imageInputRef.current?.click()}
+                                    className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all ${selectedImage ? 'border-emerald-400 bg-emerald-50/30' : 'border-gray-100 bg-gray-50/50 hover:border-emerald-200'}`}
+                                >
+                                    <input 
+                                        type="file" 
+                                        ref={imageInputRef} 
+                                        onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+                                        accept="image/*" 
+                                        className="hidden" 
+                                    />
+                                    {selectedImage ? (
+                                        <div className="flex items-center gap-3 w-full">
+                                            <img 
+                                                src={URL.createObjectURL(selectedImage)} 
+                                                alt="Preview" 
+                                                className="w-12 h-12 rounded-lg object-cover" 
+                                            />
+                                            <span className="text-xs text-emerald-600 font-bold truncate flex-1">{selectedImage.name}</span>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+                                                className="p-1 hover:bg-white rounded-full text-emerald-400"
+                                            >
+                                                <XCircle className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center py-2">
+                                            <PlusCircle className="w-6 h-6 text-emerald-400 mb-1" />
+                                            <p className="text-[10px] text-gray-400 font-bold">Ajouter une image</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -480,7 +527,7 @@ export default function AdminCategories() {
                         <ModalConfirmButton
                             onClick={handleCreate}
                             disabled={isSubmitting || !code.trim() || (!disciplineId && !customDiscipline.trim())}
-                            className="bg-violet-600 hover:bg-violet-700 shadow-violet-200 border-none"
+                            className="bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 border-none"
                         >
                             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2 inline" /> : <PlusCircle className="w-4 h-4 mr-2 inline" />}
                             Créer la catégorie

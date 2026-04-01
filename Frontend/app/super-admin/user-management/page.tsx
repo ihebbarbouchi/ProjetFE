@@ -18,9 +18,9 @@ import {
 } from '../../components/ui/select';
 import {
     Users, UserCheck, GraduationCap, Search, Trash2, ShieldCheck,
-    Loader2, AlertCircle, Clock, CheckCircle, XCircle, Eye, Edit,
+    Loader2, AlertCircle, Clock, CheckCircle, XCircle, Edit,
     FileText, Smartphone, Building, Briefcase, UserPlus, FolderOpen,
-    RotateCcw, Download,
+    Download,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -176,15 +176,6 @@ export default function UserManagement() {
         finally   { setActionLoading(null); }
     };
 
-    const handleReset = async (id: number) => {
-        setActionLoading(id);
-        try {
-            await apiAction(`${API_URL}/admin/reset-user/${id}`);
-            setUsers(p => p.map(u => u.id === id ? { ...u, statut: 'pending' } : u));
-            toast.success('Compte remis en attente');
-        } catch { toast.error('Erreur lors du reset'); }
-        finally   { setActionLoading(null); }
-    };
 
     const handleDelete = async (id: number) => {
         if (!confirm('Supprimer définitivement cet utilisateur ?')) return;
@@ -457,19 +448,7 @@ export default function UserManagement() {
                                                                 >
                                                                     <Edit className="w-3.5 h-3.5" /> Modifier
                                                                 </Button>
-                                                                {user.statut === 'active' && (
-                                                                    <Button
-                                                                        size="sm" variant="outline"
-                                                                        className="text-amber-600 border-amber-100 hover:bg-amber-50 h-8 px-3 rounded-lg gap-1.5 text-xs"
-                                                                        onClick={() => handleReset(user.id)}
-                                                                        disabled={actionLoading === user.id}
-                                                                        title="Remettre en attente"
-                                                                    >
-                                                                        {actionLoading === user.id
-                                                                            ? <Loader2 className="w-3 h-3 animate-spin" />
-                                                                            : <RotateCcw className="w-3.5 h-3.5" />}
-                                                                    </Button>
-                                                                )}
+
                                                             </>
                                                         )}
 

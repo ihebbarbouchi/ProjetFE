@@ -69,6 +69,7 @@ class CategoryController extends Controller
             'types.*' => 'integer|exists:types_ressources,id',
             'custom_types' => 'nullable|array',
             'custom_types.*' => 'string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // 2MB limit
         ]);
 
         // Au moins une discipline est requise
@@ -78,6 +79,11 @@ class CategoryController extends Controller
 
         $user = Auth::user();
         $isSuperAdmin = $user && $user->role === 'super-admin';
+        
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('category_images', 'public');
+        }
 
         $categorie = Categorie::create([
             'user_id' => $user->id,
@@ -89,6 +95,7 @@ class CategoryController extends Controller
             'custom_discipline' => $request->custom_discipline,
             'custom_niveau' => $request->custom_niveau,
             'custom_types' => $request->custom_types,
+            'image_path' => $imagePath,
         ]);
 
         // Attacher les types existants

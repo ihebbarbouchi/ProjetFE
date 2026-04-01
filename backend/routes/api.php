@@ -27,6 +27,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+// ── Routes publiques (sans authentification) ──────────────────────────────
+Route::get('/public/categories', [CategoryController::class, 'index']);
+Route::get('/public/resources/category/{cat_id}', 'App\Http\Controllers\ResourceController@indexByCategory');
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -62,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('niveaux', NiveauController::class);
 
         // Catégories (admin)
+        Route::post('/categories',            [CategoryController::class, 'store']);
         Route::post('/approve-category/{id}', [CategoryController::class, 'approve']);
         Route::post('/reject-category/{id}',  [CategoryController::class, 'reject']);
         Route::delete('/categories/{id}',     [CategoryController::class, 'destroy']);
@@ -117,4 +122,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{id}/read',   [NotificationController::class, 'markAsRead']);
         Route::delete('/{id}',       [NotificationController::class, 'destroy']);
     });
+
+    // ── Resources ────────────────────────────────────────────────────────
+    Route::get('/my-resources', 'App\Http\Controllers\ResourceController@myResources');
+    Route::post('/resources', 'App\Http\Controllers\ResourceController@store');
+    Route::delete('/resources/{id}', 'App\Http\Controllers\ResourceController@destroy');
 });
