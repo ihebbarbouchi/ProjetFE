@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
  * /formations-details?id=X  →  redirects to  /formations/X
  * /formations-details (no id)  →  redirects to  /formations
  */
-export default function FormationsDetailsRedirect() {
+function FormationsDetailsRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -28,5 +28,17 @@ export default function FormationsDetailsRedirect() {
         <p className="text-sm text-gray-500">Redirection en cours…</p>
       </div>
     </div>
+  );
+}
+
+export default function FormationsDetailsRedirect() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    }>
+      <FormationsDetailsRedirectContent />
+    </Suspense>
   );
 }

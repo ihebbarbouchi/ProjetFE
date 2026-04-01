@@ -107,6 +107,7 @@ export default function SuperAdminDashboard() {
   };
 
   // ── Stats ──────────────────────────────────────────────────
+
   const totalStudents = users.filter(u => u.role === 'student').length;
   const totalTeachers = users.filter(u => u.role === 'teacher').length;
   const activeTeachers = users.filter(u => u.role === 'teacher' && u.statut === 'active').length;
