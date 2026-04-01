@@ -241,7 +241,7 @@ export default function TeacherQuizPage() {
   const statusBadge = (status: Quiz['status']) => {
     if (status === 'publie') return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Publié</Badge>;
     if (status === 'archive') return <Badge className="bg-gray-100 text-gray-600 border-gray-200">Archivé</Badge>;
-    return <Badge className="bg-amber-100 text-amber-700 border-amber-200">Brouillon</Badge>;
+    return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100">Brouillon</Badge>;
   };
 
   const filteredQcm = qcmList.filter(q =>
@@ -288,7 +288,7 @@ export default function TeacherQuizPage() {
           {[
             { label: 'Total quiz', value: quizzes.length, icon: HelpCircle, color: 'emerald' },
             { label: 'Publiés', value: quizzes.filter(q => q.status === 'publie').length, icon: CheckCircle2, color: 'emerald' },
-            { label: 'Brouillons', value: quizzes.filter(q => q.status === 'brouillon').length, icon: FileText, color: 'amber' },
+            { label: 'Brouillons', value: quizzes.filter(q => q.status === 'brouillon').length, icon: FileText, color: 'emerald' },
           ].map((s, i) => (
             <Card key={i}>
               <CardContent className="p-5 flex items-center gap-4">
@@ -406,7 +406,7 @@ export default function TeacherQuizPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        className="text-gray-400 hover:text-emerald-700 hover:bg-emerald-50"
                         onClick={() => handleDelete(quiz.id)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -512,11 +512,11 @@ export default function TeacherQuizPage() {
                 </div>
               ) : step === 'error' ? (
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <AlertCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-red-700 text-sm">Erreur</p>
-                      <p className="text-xs text-red-500 mt-0.5">{errorMsg}</p>
+                      <p className="font-medium text-emerald-800 text-sm">Erreur</p>
+                      <p className="text-xs text-emerald-700 mt-0.5">{errorMsg}</p>
                     </div>
                   </div>
                   <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => setStep('idle')}>
@@ -644,7 +644,7 @@ export default function TeacherQuizPage() {
                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                     <span className="text-xs text-gray-500">{qcm.nb_questions} questions</span>
                                     {qcm.discipline && <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{qcm.discipline.discipline}</span>}
-                                    {qcm.niveau && <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{qcm.niveau.niveau}</span>}
+                                    {qcm.niveau && <span className="text-xs text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">{qcm.niveau.niveau}</span>}
                                   </div>
                                 </div>
                               </div>
@@ -654,9 +654,9 @@ export default function TeacherQuizPage() {
                             {/* Stats difficulté */}
                             {selectedQcm?.id === qcm.id && (
                               <div className="flex gap-2 mt-2 pt-2 border-t border-emerald-100">
-                                {qcm.nb_facile > 0 && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{qcm.nb_facile} facile</span>}
-                                {qcm.nb_moyen > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{qcm.nb_moyen} moyen</span>}
-                                {qcm.nb_difficile > 0 && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{qcm.nb_difficile} difficile</span>}
+                                 {qcm.nb_facile > 0 && <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{qcm.nb_facile} facile</span>}
+                                 {qcm.nb_moyen > 0 && <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full">{qcm.nb_moyen} moyen</span>}
+                                 {qcm.nb_difficile > 0 && <span className="text-xs bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full">{qcm.nb_difficile} difficile</span>}
                               </div>
                             )}
                           </button>

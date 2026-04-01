@@ -15,7 +15,8 @@ import {
 } from '../../components/ui/modal';
 import {
     CheckCircle, XCircle, Trash2, Plus, Search,
-    FolderOpen, Filter, Loader2
+    FolderOpen, Filter, Loader2, Send, PlusCircle,
+    Database, BookOpen
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
@@ -43,6 +44,23 @@ export default function AdminCategories() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Creation modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [disciplines, setDisciplines] = useState<any[]>([]);
+    const [niveaux, setNiveaux] = useState<any[]>([]);
+    const [typesRessources, setTypesRessources] = useState<any[]>([]);
+
+    // Form state
+    const [disciplineId, setDisciplineId] = useState('');
+    const [customDiscipline, setCustomDiscipline] = useState('');
+    const [niveauId, setNiveauId] = useState('');
+    const [customNiveau, setCustomNiveau] = useState('');
+    const [code, setCode] = useState('');
+    const [description, setDescription] = useState('');
+    const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
+    const [customTypes, setCustomTypes] = useState<string[]>(['']);
+
     const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
@@ -52,14 +70,70 @@ export default function AdminCategories() {
     const fetchCategories = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_URL}/list-categories?status=all`, { headers });
-            if (res.ok) setCategories(await res.json());
-            else toast.error('Erreur lors du chargement des catégories');
+            const [catRes, discRes, nivRes, typeRes] = await Promise.all([
+                fetch(`${API_URL}/list-categories?status=all`, { headers }),
+                fetch(`${API_URL}/admin/disciplines`, { headers }),
+                fetch(`${API_URL}/admin/niveaux`, { headers }),
+                fetch(`${API_URL}/admin/types-ressources`, { headers }),
+            ]);
+            if (catRes.ok) setCategories(await catRes.json());
+            if (discRes.ok) setDisciplines(await discRes.json());
+            if (nivRes.ok) setNiveaux(await nivRes.json());
+            if (typeRes.ok) setTypesRessources(await typeRes.json());
         } catch {
             toast.error('Erreur de connexion');
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const resetForm = () => {
+        setDisciplineId(''); setCustomDiscipline('');
+        setNiveauId(''); setCustomNiveau('');
+        setCode(''); setDescription('');
+        setSelectedTypes([]); setCustomTypes(['']);
+    };
+
+    const handleCreate = async () => {
+        if (!code.trim()) { toast.error('Le code est requis.'); return; }
+        if (!disciplineId && !customDiscipline.trim()) {
+            toast.error('Veuillez choisir ou saisir une discipline.'); return;
+        }
+        setIsSubmitting(true);
+        try {
+            const payload: any = {
+                code: code.toUpperCase(),
+                description,
+                types: selectedTypes,
+                custom_types: customTypes.filter(t => t.trim() !== ''),
+            };
+            if (disciplineId && disciplineId !== 'other') payload.discipline_id = Number(disciplineId);
+            else payload.custom_discipline = customDiscipline.trim();
+
+            if (niveauId && niveauId !== 'other') payload.niveau_id = Number(niveauId);
+            else if (customNiveau.trim()) payload.custom_niveau = customNiveau.trim();
+
+            const res = await fetch(`${API_URL}/admin/categories`, {
+                method: 'POST', headers, body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+                toast.success('Catégorie créée avec succès !');
+                setIsModalOpen(false);
+                resetForm();
+                fetchCategories();
+            } else {
+                const err = await res.json();
+                toast.error(err.message ?? 'Erreur lors de la création.');
+            }
+        } catch {
+            toast.error('Erreur de connexion.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const toggleType = (id: number) => {
+        setSelectedTypes(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
     };
 
     useEffect(() => { fetchCategories(); }, []);
@@ -114,9 +188,18 @@ export default function AdminCategories() {
         <Layout role="super-admin">
             <div className="space-y-6">
                 {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Gestion des Catégories</h1>
-                    <p className="text-gray-500 mt-1">Approuvez ou refusez les suggestions des enseignants</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Gestion des Catégories</h1>
+                        <p className="text-gray-500 mt-1">Gérez le catalogue des disciplines et niveaux</p>
+                    </div>
+                    <Button
+                        onClick={() => setIsModalOpen(true)}
+                        className="bg-violet-600 hover:bg-violet-700 shadow-md flex items-center gap-2 h-11 px-6 rounded-xl font-semibold transition-all hover:scale-[1.02]"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Ajouter une catégorie
+                    </Button>
                 </div>
 
                 {/* Stat cards */}
@@ -263,6 +346,147 @@ export default function AdminCategories() {
                         )}
                     </CardContent>
                 </Card>
+                {/* Create Modal */}
+                <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <ModalHeader onClose={() => { setIsModalOpen(false); resetForm(); }}>
+                        Ajouter une nouvelle catégorie
+                    </ModalHeader>
+                    <ModalBody className="py-4">
+                        <div className="space-y-4">
+                            {/* Discipline */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="sg-discipline" className="text-xs font-bold text-gray-400 uppercase ml-1">Discipline *</Label>
+                                <Select value={disciplineId} onValueChange={setDisciplineId}>
+                                    <SelectTrigger id="sg-discipline" className="h-11 rounded-xl bg-gray-50/50">
+                                        <SelectValue placeholder="Choisir une discipline" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {disciplines.map(d => (
+                                            <SelectItem key={d.id} value={String(d.id)}>{d.discipline}</SelectItem>
+                                        ))}
+                                        <SelectItem value="other">✏️ Autre (nouvelle discipline)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {disciplineId === 'other' && (
+                                    <Input
+                                        id="sg-custom-discipline"
+                                        placeholder="Nom de la discipline"
+                                        value={customDiscipline}
+                                        onChange={e => setCustomDiscipline(e.target.value)}
+                                        className="h-11 rounded-xl mt-1.5"
+                                    />
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Code */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="sg-code" className="text-xs font-bold text-gray-400 uppercase ml-1">Code / Label *</Label>
+                                    <Input
+                                        id="sg-code"
+                                        placeholder="Ex: MATH-L1"
+                                        value={code}
+                                        onChange={e => setCode(e.target.value.toUpperCase())}
+                                        className="h-11 rounded-xl bg-gray-50/50"
+                                    />
+                                </div>
+
+                                {/* Niveau */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="sg-niveau" className="text-xs font-bold text-gray-400 uppercase ml-1">Niveau</Label>
+                                    <Select value={niveauId} onValueChange={setNiveauId}>
+                                        <SelectTrigger id="sg-niveau" className="h-11 rounded-xl bg-gray-50/50">
+                                            <SelectValue placeholder="Niveau (opt.)" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {niveaux.map(n => (
+                                                <SelectItem key={n.id} value={String(n.id)}>{n.niveau}</SelectItem>
+                                            ))}
+                                            <SelectItem value="other">✏️ Autre</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {niveauId === 'other' && (
+                                <div className="space-y-1.5">
+                                    <Input
+                                        id="sg-custom-niveau"
+                                        placeholder="Nom du niveau"
+                                        value={customNiveau}
+                                        onChange={e => setCustomNiveau(e.target.value)}
+                                        className="h-11 rounded-xl bg-gray-50/50"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Types de ressources */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-gray-400 uppercase ml-1">Types de ressources associés</Label>
+                                <div className="flex flex-wrap gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100">
+                                    {typesRessources.map(t => (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => toggleType(t.id)}
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedTypes.includes(t.id) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300'}`}
+                                        >
+                                            {t.type_ressource}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase ml-1">Plus de types :</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {customTypes.map((ct, i) => (
+                                            <Input
+                                                key={i}
+                                                placeholder={`Nouveau type ${i + 1}`}
+                                                value={ct}
+                                                onChange={e => {
+                                                    const arr = [...customTypes];
+                                                    arr[i] = e.target.value;
+                                                    setCustomTypes(arr);
+                                                }}
+                                                className="h-10 text-sm rounded-xl bg-gray-50/30"
+                                            />
+                                        ))}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCustomTypes([...customTypes, ''])}
+                                        className="text-xs text-violet-600 font-medium hover:underline flex items-center gap-1"
+                                    >
+                                        <PlusCircle className="w-3 h-3" /> Ajouter un type
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="sg-desc" className="text-xs font-bold text-gray-400 uppercase ml-1">Description (optionnel)</Label>
+                                <Textarea
+                                    id="sg-desc"
+                                    placeholder="Informations complémentaires sur cette catégorie…"
+                                    value={description}
+                                    onChange={e => setDescription(e.target.value)}
+                                    className="min-h-[80px] rounded-xl bg-gray-50/50 resize-none text-sm p-3"
+                                />
+                            </div>
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <ModalCancelButton onClick={() => { setIsModalOpen(false); resetForm(); }} />
+                        <ModalConfirmButton
+                            onClick={handleCreate}
+                            disabled={isSubmitting || !code.trim() || (!disciplineId && !customDiscipline.trim())}
+                            className="bg-violet-600 hover:bg-violet-700 shadow-violet-200 border-none"
+                        >
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2 inline" /> : <PlusCircle className="w-4 h-4 mr-2 inline" />}
+                            Créer la catégorie
+                        </ModalConfirmButton>
+                    </ModalFooter>
+                </Modal>
             </div>
         </Layout>
     );

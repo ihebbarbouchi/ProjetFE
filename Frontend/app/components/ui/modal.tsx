@@ -121,7 +121,7 @@ export function ModalHeader({ children, onClose, className }: ModalHeaderProps) 
 
 export function ModalBody({ children, className }: ModalBodyProps) {
   return (
-    <div className={cn("px-6 py-6", className)}>
+    <div className={cn("px-6 py-6 max-h-[75vh] overflow-y-auto custom-scrollbar", className)}>
       {children}
     </div>
   );

@@ -149,8 +149,12 @@ export function ProfileSettings({ role }: ProfileSettingsProps) {
 
                 {/* Toast notification */}
                 {toastMsg && (
-                    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium animate-in slide-in-from-top-2 ${toastMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-                        {toastMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium animate-in slide-in-from-top-2 ${
+                        toastMsg.type === 'success' 
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                        : (role === 'teacher' ? 'bg-emerald-200 border-emerald-300 text-emerald-900' : 'bg-red-50 border-red-200 text-red-800')
+                    }`}>
+                        {toastMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : (role === 'teacher' ? <AlertCircle className="w-4 h-4 text-emerald-900" /> : <AlertCircle className="w-4 h-4 text-red-600" />)}
                         {toastMsg.msg}
                     </div>
                 )}

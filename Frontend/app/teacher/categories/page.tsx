@@ -127,7 +127,7 @@ export default function TeacherCategories() {
                 method: 'POST', headers, body: JSON.stringify(payload),
             });
             if (res.ok) {
-                toast.success('Suggestion envoyee ! En attente d\'approbation.');
+                toast.success('Suggestion envoyée ! En attente d\'approbation.');
                 setIsSuggestOpen(false);
                 resetForm();
                 fetchAll();

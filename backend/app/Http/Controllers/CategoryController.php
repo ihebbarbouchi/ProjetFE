@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Categorie;
 use App\Models\Discipline;
 use App\Models\Niveau;
+
 use App\Models\Notification;
 use App\Models\TypeRessource;
 use Illuminate\Http\Request;
@@ -31,21 +32,21 @@ class CategoryController extends Controller
 
         $mapped = $categories->map(function ($cat) {
             return [
-                'id'               => $cat->id,
-                'code'             => $cat->code,
-                'description'      => $cat->description,
-                'statut'           => $cat->statut,
-                'discipline_id'    => $cat->discipline_id,
-                'niveau_id'        => $cat->niveau_id,
-                'discipline_name'  => $cat->discipline?->discipline ?? $cat->custom_discipline,
-                'niveau_name'      => $cat->level?->niveau ?? $cat->custom_niveau,
-                'custom_discipline'=> $cat->custom_discipline,
-                'custom_niveau'    => $cat->custom_niveau,
-                'custom_types'     => $cat->custom_types,
-                'resource_types'   => $cat->resourceTypes,
-                'proposed_by'      => $cat->user ? ($cat->user->prenom . ' ' . $cat->user->nom_famille) : null,
-                'user_id'          => $cat->user_id,
-                'created_at'       => $cat->created_at,
+                'id' => $cat->id,
+                'code' => $cat->code,
+                'description' => $cat->description,
+                'statut' => $cat->statut,
+                'discipline_id' => $cat->discipline_id,
+                'niveau_id' => $cat->niveau_id,
+                'discipline_name' => $cat->discipline?->discipline ?? $cat->custom_discipline,
+                'niveau_name' => $cat->level?->niveau ?? $cat->custom_niveau,
+                'custom_discipline' => $cat->custom_discipline,
+                'custom_niveau' => $cat->custom_niveau,
+                'custom_types' => $cat->custom_types,
+                'resource_types' => $cat->resourceTypes,
+                'proposed_by' => $cat->user ? ($cat->user->prenom . ' ' . $cat->user->nom_famille) : null,
+                'user_id' => $cat->user_id,
+                'created_at' => $cat->created_at,
             ];
         });
 
@@ -58,16 +59,16 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'code'             => 'required|string|unique:categories,code',
-            'discipline_id'    => 'nullable|integer|exists:disciplines,id',
-            'custom_discipline'=> 'nullable|string',
-            'niveau_id'        => 'nullable|integer|exists:niveaux,id',
-            'custom_niveau'    => 'nullable|string',
-            'description'      => 'nullable|string',
-            'types'            => 'nullable|array',
-            'types.*'          => 'integer|exists:types_ressources,id',
-            'custom_types'     => 'nullable|array',
-            'custom_types.*'   => 'string',
+            'code' => 'required|string|unique:categories,code',
+            'discipline_id' => 'nullable|integer|exists:disciplines,id',
+            'custom_discipline' => 'nullable|string',
+            'niveau_id' => 'nullable|integer|exists:niveaux,id',
+            'custom_niveau' => 'nullable|string',
+            'description' => 'nullable|string',
+            'types' => 'nullable|array',
+            'types.*' => 'integer|exists:types_ressources,id',
+            'custom_types' => 'nullable|array',
+            'custom_types.*' => 'string',
         ]);
 
         // Au moins une discipline est requise
@@ -79,15 +80,15 @@ class CategoryController extends Controller
         $isSuperAdmin = $user && $user->role === 'super-admin';
 
         $categorie = Categorie::create([
-            'user_id'          => $user->id,
-            'discipline_id'    => $request->discipline_id,
-            'niveau_id'        => $request->niveau_id,
-            'code'             => strtoupper($request->code),
-            'description'      => $request->description,
-            'statut'           => $isSuperAdmin ? 'approved' : 'pending',
-            'custom_discipline'=> $request->custom_discipline,
-            'custom_niveau'    => $request->custom_niveau,
-            'custom_types'     => $request->custom_types,
+            'user_id' => $user->id,
+            'discipline_id' => $request->discipline_id,
+            'niveau_id' => $request->niveau_id,
+            'code' => strtoupper($request->code),
+            'description' => $request->description,
+            'statut' => $isSuperAdmin ? 'approved' : 'pending',
+            'custom_discipline' => $request->custom_discipline,
+            'custom_niveau' => $request->custom_niveau,
+            'custom_types' => $request->custom_types,
         ]);
 
         // Attacher les types existants
@@ -101,8 +102,8 @@ class CategoryController extends Controller
         }
 
         return response()->json([
-            'message'  => $isSuperAdmin ? 'Catégorie créée avec succès.' : 'Suggestion envoyée. En attente d\'approbation.',
-            'categorie'=> $categorie->fresh(['discipline', 'level', 'resourceTypes']),
+            'message' => $isSuperAdmin ? 'Catégorie créée avec succès.' : 'Suggestion envoyée. En attente d\'approbation.',
+            'categorie' => $categorie->fresh(['discipline', 'level', 'resourceTypes']),
         ], 201);
     }
 
@@ -117,6 +118,7 @@ class CategoryController extends Controller
 
         $categorie->statut = 'approved';
         $categorie->save();
+
 
         // Notification in-app au proposeur
         if ($categorie->user_id) {
@@ -133,13 +135,14 @@ class CategoryController extends Controller
         }
 
         // Email au proposeur
+
         if ($categorie->user && $categorie->user->email) {
             try {
                 Mail::raw(
                     "Bonjour,\n\nVotre suggestion de catégorie (code: {$categorie->code}) a été approuvée.\n\nCordialement,\nL'équipe EduShare",
                     function ($message) use ($categorie) {
                         $message->to($categorie->user->email)
-                                ->subject('Votre catégorie a été approuvée');
+                            ->subject('Votre catégorie a été approuvée');
                     }
                 );
             } catch (\Exception $e) {
@@ -157,6 +160,7 @@ class CategoryController extends Controller
     {
         $categorie = Categorie::findOrFail($id);
 
+
         // Notification in-app au proposeur
         if ($categorie->user_id) {
             try {
@@ -172,13 +176,14 @@ class CategoryController extends Controller
         }
 
         // Email au proposeur
+
         if ($categorie->user && $categorie->user->email) {
             try {
                 Mail::raw(
                     "Bonjour,\n\nVotre suggestion de catégorie (code: {$categorie->code}) a été refusée.\n\nCordialement,\nL'équipe EduShare",
                     function ($message) use ($categorie) {
                         $message->to($categorie->user->email)
-                                ->subject('Votre catégorie a été refusée');
+                            ->subject('Votre catégorie a été refusée');
                     }
                 );
             } catch (\Exception $e) {
