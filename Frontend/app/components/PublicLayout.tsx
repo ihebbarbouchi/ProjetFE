@@ -18,7 +18,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const navItems = [
     { label: 'Accueil', path: '/' },
     { label: 'À propos', path: '/about' },
-    { label: 'Ressources', path: '/public-resources' },
+    { label: 'Categories', path: '/public-resources' },
     { label: 'Formations', path: '/formations' },
     { label: 'Contact', path: '/contact' },
   ];

@@ -183,7 +183,7 @@ export default function QcmBibliothequePage() {
           {[
             { label: 'Total QCM', value: qcmList.length, color: 'emerald' },
             { label: 'Questions au total', value: qcmList.reduce((s, q) => s + q.nb_questions, 0), color: 'emerald' },
-            { label: 'Disciplines couvertes', value: new Set(qcmList.map(q => q.discipline?.id)).size, color: 'blue' },
+            { label: 'Disciplines couvertes', value: new Set(qcmList.map(q => q.discipline?.id)).size, color: 'emerald' },
           ].map((s, i) => (
             <Card key={i}>
               <CardContent className="p-5 flex items-center gap-4">
@@ -265,14 +265,14 @@ export default function QcmBibliothequePage() {
                             <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{qcm.discipline.discipline}</span>
                           )}
                           {qcm.niveau && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{qcm.niveau.niveau}</span>
+                            <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full">{qcm.niveau.niveau}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-xs text-gray-400 flex-wrap">
                           <span>{qcm.nb_questions} questions</span>
-                          {qcm.nb_facile > 0 && <span className="text-green-600">{qcm.nb_facile} facile</span>}
-                          {qcm.nb_moyen > 0 && <span className="text-amber-600">{qcm.nb_moyen} moyen</span>}
-                          {qcm.nb_difficile > 0 && <span className="text-red-600">{qcm.nb_difficile} difficile</span>}
+                          {qcm.nb_facile > 0 && <span className="text-emerald-600">{qcm.nb_facile} facile</span>}
+                          {qcm.nb_moyen > 0 && <span className="text-emerald-500 opacity-80">{qcm.nb_moyen} moyen</span>}
+                          {qcm.nb_difficile > 0 && <span className="text-emerald-700 font-semibold">{qcm.nb_difficile} difficile</span>}
                         </div>
                       </div>
 
@@ -288,7 +288,7 @@ export default function QcmBibliothequePage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          className="text-gray-400 hover:text-emerald-700 hover:bg-emerald-50"
                           onClick={(e) => { e.stopPropagation(); handleDelete(qcm.id); }}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -311,19 +311,19 @@ export default function QcmBibliothequePage() {
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Répartition des difficultés</p>
                             <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
                               {qcm.nb_facile > 0 && (
-                                <div className="bg-green-400 transition-all" style={{ width: `${(qcm.nb_facile / qcm.nb_questions) * 100}%` }} title={`${qcm.nb_facile} facile(s)`} />
+                                <div className="bg-emerald-400 transition-all" style={{ width: `${(qcm.nb_facile / qcm.nb_questions) * 100}%` }} title={`${qcm.nb_facile} facile(s)`} />
                               )}
                               {qcm.nb_moyen > 0 && (
-                                <div className="bg-amber-400 transition-all" style={{ width: `${(qcm.nb_moyen / qcm.nb_questions) * 100}%` }} title={`${qcm.nb_moyen} moyen(s)`} />
+                                <div className="bg-emerald-300 transition-all" style={{ width: `${(qcm.nb_moyen / qcm.nb_questions) * 100}%` }} title={`${qcm.nb_moyen} moyen(s)`} />
                               )}
                               {qcm.nb_difficile > 0 && (
-                                <div className="bg-red-400 transition-all" style={{ width: `${(qcm.nb_difficile / qcm.nb_questions) * 100}%` }} title={`${qcm.nb_difficile} difficile(s)`} />
+                                <div className="bg-emerald-600 transition-all" style={{ width: `${(qcm.nb_difficile / qcm.nb_questions) * 100}%` }} title={`${qcm.nb_difficile} difficile(s)`} />
                               )}
                             </div>
                             <div className="flex gap-4 text-xs">
-                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />{qcm.nb_facile} facile</span>
-                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />{qcm.nb_moyen} moyen</span>
-                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />{qcm.nb_difficile} difficile</span>
+                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />{qcm.nb_facile} facile</span>
+                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />{qcm.nb_moyen} moyen</span>
+                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />{qcm.nb_difficile} difficile</span>
                             </div>
                           </div>
                         )}
@@ -387,11 +387,11 @@ export default function QcmBibliothequePage() {
                 </div>
               ) : step === 'error' ? (
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <AlertCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-red-700 text-sm">Erreur d&apos;import</p>
-                      <p className="text-xs text-red-500 mt-0.5">{errorMsg}</p>
+                      <p className="font-medium text-emerald-800 text-sm">Erreur d&apos;import</p>
+                      <p className="text-xs text-emerald-600 mt-0.5">{errorMsg}</p>
                     </div>
                   </div>
                   <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => setStep('idle')}>

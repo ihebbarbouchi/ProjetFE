@@ -337,7 +337,11 @@ export function Layout({ children, role, onSearch }: LayoutProps) {
                   {/* Déconnexion */}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                      role === 'teacher' 
+                      ? 'text-emerald-700 hover:bg-emerald-50' 
+                      : 'text-red-600 hover:bg-red-50'
+                    }`}
                   >
                     <LogOut className="w-4 h-4" />
                     Se déconnecter

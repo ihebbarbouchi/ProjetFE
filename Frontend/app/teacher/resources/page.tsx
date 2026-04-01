@@ -102,8 +102,8 @@ export default function TeacherResources() {
                     </Card>
                     <Card>
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                                <Edit className="w-5 h-5 text-yellow-600" />
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <Edit className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Drafts</p>
@@ -113,8 +113,8 @@ export default function TeacherResources() {
                     </Card>
                     <Card>
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-purple-600" />
+                            <div className="w-10 h-10 rounded-full bg-emerald-200 flex items-center justify-center">
+                                <Users className="w-5 h-5 text-emerald-700" />
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Total Students</p>
@@ -250,7 +250,7 @@ export default function TeacherResources() {
                                                 <Button size="sm" variant="ghost" title="Edit">
                                                     <Edit className="w-4 h-4" />
                                                 </Button>
-                                                <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700" title="Delete">
+                                                <Button size="sm" variant="ghost" className="text-emerald-700 hover:text-emerald-800" title="Delete">
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </TableCell>

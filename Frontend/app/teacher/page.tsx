@@ -120,7 +120,7 @@ export default function TeacherDashboard() {
                       <TableCell className="text-right space-x-2">
                         <Button size="sm" variant="ghost"><Eye className="w-4 h-4" /></Button>
                         <Button size="sm" variant="ghost"><Edit className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
+                        <Button size="sm" variant="ghost" className="text-emerald-700 hover:text-emerald-800">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </TableCell>
@@ -213,13 +213,13 @@ export default function TeacherDashboard() {
                       <TableCell className="font-medium">{result.quiz}</TableCell>
                       <TableCell>{result.student}</TableCell>
                       <TableCell>
-                        <span className={result.score >= 70 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                        <span className={result.score >= 70 ? 'text-emerald-600 font-semibold' : 'text-emerald-800 font-semibold opacity-70'}>
                           {result.score}%
                         </span>
                       </TableCell>
                       <TableCell>{result.date}</TableCell>
                       <TableCell>
-                        <Badge variant={result.status === 'Passed' ? 'default' : 'destructive'}>
+                        <Badge className={result.status === 'Passed' ? 'bg-emerald-100 text-emerald-700 border-none' : 'bg-emerald-50 text-emerald-600 border-none'}>
                           {result.status}
                         </Badge>
                       </TableCell>

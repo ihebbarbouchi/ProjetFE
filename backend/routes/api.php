@@ -7,6 +7,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TypeRessourceController;
 use App\Http\Controllers\DisciplineController;
 use App\Http\Controllers\NiveauController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\SuggestionController;
 use App\Http\Controllers\Api\QuizIaController;
 use App\Http\Controllers\Api\QcmBibliothequeController;
 
@@ -57,7 +59,23 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Niveaux
         Route::apiResource('niveaux', NiveauController::class);
+
+        // Catégories (admin)
+        Route::post('/approve-category/{id}', [CategoryController::class, 'approve']);
+        Route::post('/reject-category/{id}',  [CategoryController::class, 'reject']);
+        Route::delete('/categories/{id}',     [CategoryController::class, 'destroy']);
+
+        // Suggestions (admin)
+        Route::get('/suggestions',            [SuggestionController::class, 'index']);
+        Route::post('/suggestions/{id}/accept', [SuggestionController::class, 'accept']);
+        Route::post('/suggestions/{id}/refuse', [SuggestionController::class, 'refuse']);
+        Route::patch('/suggestions/{id}',     [SuggestionController::class, 'update']);
     });
+
+    // ── Catégories ────────────────────────────────────────────────────────
+    Route::get('/list-categories', [CategoryController::class, 'index']);
+    Route::post('/suggest-category', [CategoryController::class, 'store']);
+    Route::post('/suggestions', [SuggestionController::class, 'store']);
 
     // ── Quiz ─────────────────────────────────────────────────────────────
     Route::prefix('quiz')->group(function () {
