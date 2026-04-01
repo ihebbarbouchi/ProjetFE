@@ -1,35 +1,196 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout } from '../components/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft, BookOpen, FileText, HelpCircle, Plus, Trash2,
+  Globe, Lock, CloudUpload, Paperclip, Info, CheckCircle2,
+  AlignLeft, Layers,
+} from 'lucide-react';
 
+// ── Reusable Section Card ──────────────────────────────────────────────────────
+function SectionCard({
+  icon: Icon,
+  iconBg = 'bg-emerald-100',
+  iconColor = 'text-emerald-600',
+  title,
+  description,
+  children,
+}: {
+  icon: React.ElementType;
+  iconBg?: string;
+  iconColor?: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+      <div className="flex items-start gap-4">
+        <div className={`w-11 h-11 rounded-full ${iconBg} flex items-center justify-center flex-shrink-0`}>
+          <Icon className={`w-5 h-5 ${iconColor}`} />
+        </div>
+        <div>
+          <h3 className="font-bold text-gray-900 text-base">{title}</h3>
+          {description && <p className="text-sm text-gray-500 mt-0.5">{description}</p>}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Visibility Toggle ──────────────────────────────────────────────────────────
+function VisibilityToggle({
+  value,
+  onChange,
+}: {
+  value: 'public' | 'private';
+  onChange: (v: 'public' | 'private') => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {[
+        { v: 'public' as const,  Icon: Globe, label: 'Public',  sub: 'VISIBLE PAR TOUS' },
+        { v: 'private' as const, Icon: Lock,  label: 'Privé',   sub: 'UNIQUEMENT MOI'   },
+      ].map(({ v, Icon, label, sub }) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          className={`relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all ${
+            value === v
+              ? 'border-emerald-500 bg-emerald-50'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          {value === v && (
+            <span className="absolute top-3 right-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            </span>
+          )}
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${value === v ? 'bg-emerald-100' : 'bg-gray-100'}`}>
+            <Icon className={`w-6 h-6 ${value === v ? 'text-emerald-600' : 'text-gray-400'}`} />
+          </div>
+          <div className="text-center">
+            <p className={`font-bold text-sm ${value === v ? 'text-emerald-700' : 'text-gray-700'}`}>{label}</p>
+            <p className={`text-[10px] font-semibold tracking-widest uppercase mt-0.5 ${value === v ? 'text-emerald-500' : 'text-gray-400'}`}>{sub}</p>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Drag-and-Drop Upload Zone ──────────────────────────────────────────────────
+function UploadZone({
+  accept,
+  label,
+  hint,
+  multiple = false,
+  onChange,
+}: {
+  accept: string;
+  label: string;
+  hint: string[];
+  multiple?: boolean;
+  onChange?: (files: FileList | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [fileNames, setFileNames] = useState<string[]>([]);
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    setFileNames(Array.from(files).map(f => f.name));
+    onChange?.(files);
+  };
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={e => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+      className={`cursor-pointer rounded-2xl border-2 border-dashed p-10 flex flex-col items-center gap-3 transition-all ${
+        dragging ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 bg-gray-50 hover:border-emerald-300 hover:bg-emerald-50/40'
+      }`}
+    >
+      <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+        <CloudUpload className="w-7 h-7 text-emerald-600" />
+      </div>
+      {fileNames.length > 0 ? (
+        <div className="text-center">
+          {fileNames.map(name => (
+            <p key={name} className="text-sm font-semibold text-emerald-700">{name}</p>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center">
+          <p className="font-bold text-gray-800">{label}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            ou <span className="text-emerald-600 underline cursor-pointer">cliquez pour parcourir</span> vos fichiers
+          </p>
+        </div>
+      )}
+      <div className="flex gap-2 mt-1">
+        {hint.map(h => (
+          <span key={h} className="text-[10px] font-bold tracking-widest uppercase text-gray-400 border border-gray-200 rounded-full px-3 py-1 bg-white">
+            {h}
+          </span>
+        ))}
+      </div>
+      <input ref={inputRef} type="file" accept={accept} multiple={multiple} className="hidden" onChange={e => handleFiles(e.target.files)} />
+    </div>
+  );
+}
+
+// ── Action Buttons ─────────────────────────────────────────────────────────────
+function FormActions({ submitLabel, onCancel }: { submitLabel: string; onCancel: () => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 pt-2">
+      <button
+        type="submit"
+        className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-lg shadow-emerald-200 transition-all hover:scale-[1.01] active:scale-95"
+      >
+        <CloudUpload className="w-5 h-5" />
+        {submitLabel}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="h-14 rounded-2xl border border-gray-200 bg-white text-gray-500 font-semibold text-base hover:bg-gray-50 transition-all"
+      >
+        Annuler
+      </button>
+    </div>
+  );
+}
+
+// ── main ──────────────────────────────────────────────────────────────────────
 export default function AddResource() {
   const router = useRouter();
-  const [resourceType, setResourceType] = useState('course');
+  const [resourceType, setResourceType] = useState<'pdf' | 'course' | 'quiz'>('pdf');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
 
-  // Course form state
+  // PDF / Document state
+  const [docCategory, setDocCategory] = useState('');
+  const [docTitle, setDocTitle] = useState('');
+  const [docDescription, setDocDescription] = useState('');
+
+  // Course state
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
   const [courseCategory, setCourseCategory] = useState('');
   const [courseDuration, setCourseDuration] = useState('');
   const [courseLevel, setCourseLevel] = useState('');
 
-  // Document form state
-  const [docTitle, setDocTitle] = useState('');
-  const [docDescription, setDocDescription] = useState('');
-  const [docCategory, setDocCategory] = useState('');
-  const [docFile, setDocFile] = useState('');
-
-  // Quiz form state
+  // Quiz state
   const [quizTitle, setQuizTitle] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
   const [quizCategory, setQuizCategory] = useState('');
@@ -38,375 +199,279 @@ export default function AddResource() {
     { id: 1, question: '', options: ['', '', '', ''], correctAnswer: 0 },
   ]);
 
-  const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      { id: questions.length + 1, question: '', options: ['', '', '', ''], correctAnswer: 0 },
-    ]);
-  };
-
-  const removeQuestion = (id: number) => {
-    setQuestions(questions.filter((q) => q.id !== id));
-  };
-
-  const updateQuestion = (id: number, field: string, value: any) => {
-    setQuestions(
-      questions.map((q) => (q.id === id ? { ...q, [field]: value } : q))
-    );
-  };
-
-  const updateOption = (questionId: number, optionIndex: number, value: string) => {
-    setQuestions(
-      questions.map((q) =>
-        q.id === questionId
-          ? { ...q, options: q.options.map((opt, idx) => (idx === optionIndex ? value : opt)) }
-          : q
-      )
-    );
-  };
+  const addQuestion = () =>
+    setQuestions([...questions, { id: questions.length + 1, question: '', options: ['', '', '', ''], correctAnswer: 0 }]);
+  const removeQuestion = (id: number) => setQuestions(questions.filter(q => q.id !== id));
+  const updateQuestion = (id: number, field: string, value: unknown) =>
+    setQuestions(questions.map(q => (q.id === id ? { ...q, [field]: value } : q)));
+  const updateOption = (qId: number, idx: number, val: string) =>
+    setQuestions(questions.map(q => q.id === qId ? { ...q, options: q.options.map((o, i) => i === idx ? val : o) } : q));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting resource:', resourceType);
     router.push('/teacher');
   };
 
+  const tabs = [
+    { key: 'pdf',    label: 'PDF / Document', Icon: Paperclip   },
+    { key: 'course', label: 'Cours',           Icon: BookOpen    },
+    { key: 'quiz',   label: 'Quiz',            Icon: HelpCircle  },
+  ] as const;
+
   return (
     <Layout role="teacher">
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Add New Resource</h2>
-          <p className="text-gray-600 mt-1">Create a new course, document, or quiz for your students</p>
+      <div className="max-w-2xl mx-auto space-y-6">
+
+        {/* ── Header ── */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push('/teacher')}
+            className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 shadow-sm transition-all"
+          >
+            <ArrowLeft className="w-4 h-4 text-gray-600" />
+          </button>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Ajouter une ressource</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Partagez vos contenus pédagogiques avec vos apprenants</p>
+          </div>
         </div>
 
-        <Tabs value={resourceType} onValueChange={setResourceType}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="course">Course</TabsTrigger>
-            <TabsTrigger value="document">Document</TabsTrigger>
-            <TabsTrigger value="quiz">Quiz</TabsTrigger>
-          </TabsList>
+        {/* ── Type Tabs ── */}
+        <div className="flex gap-2 bg-white border border-gray-100 shadow-sm rounded-2xl p-1.5">
+          {tabs.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setResourceType(key)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                resourceType === key
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                  : 'text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
 
-          {/* Course Form */}
-          <TabsContent value="course">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New Course</CardTitle>
-                <CardDescription>Add a comprehensive learning course for students</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="course-title">Course Title *</Label>
-                    <Input
-                      id="course-title"
-                      placeholder="e.g., Introduction to Python Programming"
-                      value={courseTitle}
-                      onChange={(e) => setCourseTitle(e.target.value)}
-                      required
-                    />
-                  </div>
+        {/* ══════════════════ PDF FORM ══════════════════ */}
+        {resourceType === 'pdf' && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Catégorie */}
+            <SectionCard icon={Layers} title="Sélectionnez la catégorie" description="Choisissez la catégorie existante à laquelle vous voulez ajouter ce PDF.">
+              <p className="text-sm font-semibold text-emerald-600">La catégorie détermine la discipline et le niveau.</p>
+              <div className="relative">
+                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Select value={docCategory} onValueChange={setDocCategory}>
+                  <SelectTrigger id="pdf-category" className="pl-9 rounded-xl border-gray-200 h-12">
+                    <SelectValue placeholder="Choisir une catégorie du catalogue..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="programming">Programmation</SelectItem>
+                    <SelectItem value="mathematics">Mathématiques</SelectItem>
+                    <SelectItem value="science">Sciences</SelectItem>
+                    <SelectItem value="languages">Langues</SelectItem>
+                    <SelectItem value="business">Gestion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </SectionCard>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="course-description">Description *</Label>
-                    <Textarea
-                      id="course-description"
-                      placeholder="Describe what students will learn in this course..."
-                      rows={4}
-                      value={courseDescription}
-                      onChange={(e) => setCourseDescription(e.target.value)}
-                      required
-                    />
-                  </div>
+            {/* Upload */}
+            <SectionCard icon={Paperclip} iconBg="bg-emerald-100" title="Téléversez votre fichier PDF" description="Glissez-déposez votre fichier ou cliquez pour parcourir vos fichiers.">
+              <UploadZone
+                accept=".pdf"
+                label="Glissez-déposez votre fichier"
+                hint={['.PDF UNIQUEMENT', 'MAX 10 FICHIERS']}
+                multiple
+              />
+            </SectionCard>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="course-category">Category *</Label>
-                      <Select value={courseCategory} onValueChange={setCourseCategory}>
-                        <SelectTrigger id="course-category">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="programming">Programming</SelectItem>
-                          <SelectItem value="mathematics">Mathematics</SelectItem>
-                          <SelectItem value="science">Science</SelectItem>
-                          <SelectItem value="languages">Languages</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+            {/* Informations */}
+            <SectionCard icon={Info} iconBg="bg-emerald-100" title="Informations sur la ressource" description="Structurez et décrivez votre contenu">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Titre du PDF</label>
+                  <Input
+                    id="pdf-title"
+                    placeholder='Ex : "Introduction à l&apos;algèbre linéaire"'
+                    value={docTitle}
+                    onChange={e => setDocTitle(e.target.value)}
+                    className="rounded-xl border-gray-200 h-12"
+                    required
+                  />
+                  <p className="text-xs text-gray-400">Donnez un titre clair pour votre PDF</p>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    <AlignLeft className="w-3.5 h-3.5" /> Description détaillée
+                  </label>
+                  <Textarea
+                    id="pdf-description"
+                    placeholder="Décrivez le contenu, les objectifs pédagogiques et le public visé..."
+                    rows={4}
+                    value={docDescription}
+                    onChange={e => setDocDescription(e.target.value)}
+                    className="rounded-xl border-gray-200 resize-none"
+                  />
+                </div>
+              </div>
+            </SectionCard>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="course-level">Level *</Label>
-                      <Select value={courseLevel} onValueChange={setCourseLevel}>
-                        <SelectTrigger id="course-level">
-                          <SelectValue placeholder="Select level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="beginner">Beginner</SelectItem>
-                          <SelectItem value="intermediate">Intermediate</SelectItem>
-                          <SelectItem value="advanced">Advanced</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+            {/* Visibilité */}
+            <SectionCard icon={Globe} iconBg="bg-emerald-100" title="Visibilité" description="Choisissez qui pourra voir cette ressource">
+              <VisibilityToggle value={visibility} onChange={setVisibility} />
+            </SectionCard>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="course-duration">Estimated Duration *</Label>
-                    <Input
-                      id="course-duration"
-                      placeholder="e.g., 8 hours, 4 weeks"
-                      value={courseDuration}
-                      onChange={(e) => setCourseDuration(e.target.value)}
-                      required
-                    />
-                  </div>
+            <FormActions submitLabel="Publier mon PDF" onCancel={() => router.push('/teacher')} />
+          </form>
+        )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="course-image">Course Cover Image</Label>
-                    <Input id="course-image" type="file" accept="image/*" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="course-content">Course Content Files</Label>
-                    <Input id="course-content" type="file" multiple />
-                    <p className="text-sm text-gray-500">Upload videos, PDFs, and other learning materials</p>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                      Create Course
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => router.push('/teacher')}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Document Form */}
-          <TabsContent value="document">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Document</CardTitle>
-                <CardDescription>Share study materials, guides, and reference documents</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="doc-title">Document Title *</Label>
-                    <Input
-                      id="doc-title"
-                      placeholder="e.g., Python Cheat Sheet"
-                      value={docTitle}
-                      onChange={(e) => setDocTitle(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="doc-description">Description *</Label>
-                    <Textarea
-                      id="doc-description"
-                      placeholder="Brief description of the document content..."
-                      rows={4}
-                      value={docDescription}
-                      onChange={(e) => setDocDescription(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="doc-category">Category *</Label>
-                    <Select value={docCategory} onValueChange={setDocCategory}>
-                      <SelectTrigger id="doc-category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
+        {/* ══════════════════ COURSE FORM ══════════════════ */}
+        {resourceType === 'course' && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <SectionCard icon={BookOpen} title="Informations sur le cours" description="Décrivez votre cours pour les apprenants">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Titre du cours *</label>
+                  <Input id="course-title" placeholder="Ex : Introduction à la programmation Python" value={courseTitle} onChange={e => setCourseTitle(e.target.value)} className="rounded-xl border-gray-200 h-12" required />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    <AlignLeft className="w-3.5 h-3.5" /> Description
+                  </label>
+                  <Textarea id="course-description" placeholder="Décrivez ce que les apprenants vont apprendre..." rows={4} value={courseDescription} onChange={e => setCourseDescription(e.target.value)} className="rounded-xl border-gray-200 resize-none" required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Catégorie *</label>
+                    <Select value={courseCategory} onValueChange={setCourseCategory}>
+                      <SelectTrigger id="course-category" className="rounded-xl border-gray-200 h-12"><SelectValue placeholder="Catégorie" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="programming">Programming</SelectItem>
-                        <SelectItem value="mathematics">Mathematics</SelectItem>
-                        <SelectItem value="science">Science</SelectItem>
-                        <SelectItem value="languages">Languages</SelectItem>
-                        <SelectItem value="business">Business</SelectItem>
+                        <SelectItem value="programming">Programmation</SelectItem>
+                        <SelectItem value="mathematics">Mathématiques</SelectItem>
+                        <SelectItem value="science">Sciences</SelectItem>
+                        <SelectItem value="languages">Langues</SelectItem>
+                        <SelectItem value="business">Gestion</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Niveau *</label>
+                    <Select value={courseLevel} onValueChange={setCourseLevel}>
+                      <SelectTrigger id="course-level" className="rounded-xl border-gray-200 h-12"><SelectValue placeholder="Niveau" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Débutant</SelectItem>
+                        <SelectItem value="intermediate">Intermédiaire</SelectItem>
+                        <SelectItem value="advanced">Avancé</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Durée estimée *</label>
+                  <Input id="course-duration" placeholder="Ex : 8 heures, 4 semaines" value={courseDuration} onChange={e => setCourseDuration(e.target.value)} className="rounded-xl border-gray-200 h-12" required />
+                </div>
+              </div>
+            </SectionCard>
 
+            <SectionCard icon={CloudUpload} title="Contenu du cours" description="Téléversez vos fichiers de cours (vidéos, PDFs, etc.)">
+              <UploadZone accept="*" label="Glissez-déposez vos fichiers" hint={['VIDÉOS', 'PDF', 'TOUT FORMAT']} multiple />
+            </SectionCard>
+
+            <SectionCard icon={Globe} iconBg="bg-emerald-100" title="Visibilité" description="Choisissez qui pourra voir ce cours">
+              <VisibilityToggle value={visibility} onChange={setVisibility} />
+            </SectionCard>
+
+            <FormActions submitLabel="Publier le cours" onCancel={() => router.push('/teacher')} />
+          </form>
+        )}
+
+        {/* ══════════════════ QUIZ FORM ══════════════════ */}
+        {resourceType === 'quiz' && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <SectionCard icon={HelpCircle} title="Informations sur le quiz" description="Configurez votre quiz pour les apprenants">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Titre du quiz *</label>
+                  <Input id="quiz-title" placeholder="Ex : Quiz Python — Fondamentaux" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} className="rounded-xl border-gray-200 h-12" required />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    <AlignLeft className="w-3.5 h-3.5" /> Description
+                  </label>
+                  <Textarea id="quiz-description" placeholder="Quels sujets ce quiz couvre-t-il ?" rows={3} value={quizDescription} onChange={e => setQuizDescription(e.target.value)} className="rounded-xl border-gray-200 resize-none" required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Catégorie *</label>
+                    <Select value={quizCategory} onValueChange={setQuizCategory}>
+                      <SelectTrigger id="quiz-category" className="rounded-xl border-gray-200 h-12"><SelectValue placeholder="Catégorie" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="programming">Programmation</SelectItem>
+                        <SelectItem value="mathematics">Mathématiques</SelectItem>
+                        <SelectItem value="science">Sciences</SelectItem>
+                        <SelectItem value="languages">Langues</SelectItem>
+                        <SelectItem value="business">Gestion</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Score minimum (%)</label>
+                    <Input id="quiz-passing" type="number" min="0" max="100" value={quizPassingScore} onChange={e => setQuizPassingScore(e.target.value)} className="rounded-xl border-gray-200 h-12" />
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            {/* Questions */}
+            <div className="space-y-3">
+              {questions.map((q, qi) => (
+                <div key={q.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-700">Question {qi + 1}</span>
+                    {questions.length > 1 && (
+                      <button type="button" onClick={() => removeQuestion(q.id)} className="text-red-400 hover:text-red-600 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Input placeholder="Saisissez votre question" value={q.question} onChange={e => updateQuestion(q.id, 'question', e.target.value)} className="rounded-xl border-gray-200 h-11" required />
                   <div className="space-y-2">
-                    <Label htmlFor="doc-file">Upload Document *</Label>
-                    <Input
-                      id="doc-file"
-                      type="file"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx"
-                      onChange={(e) => setDocFile(e.target.value)}
-                      required
-                    />
-                    <p className="text-sm text-gray-500">Supported formats: PDF, DOC, DOCX, PPT, PPTX</p>
+                    {q.options.map((opt, oi) => (
+                      <div key={oi} className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name={`correct-${q.id}`}
+                          checked={q.correctAnswer === oi}
+                          onChange={() => updateQuestion(q.id, 'correctAnswer', oi)}
+                          className="w-4 h-4 accent-emerald-600"
+                        />
+                        <Input placeholder={`Option ${oi + 1}`} value={opt} onChange={e => updateOption(q.id, oi, e.target.value)} className="rounded-xl border-gray-200 h-10" required />
+                      </div>
+                    ))}
+                    <p className="text-xs text-gray-400">Sélectionnez le bouton radio pour la bonne réponse</p>
                   </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addQuestion}
+                className="w-full h-12 rounded-2xl border-2 border-dashed border-emerald-300 text-emerald-600 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-emerald-50 transition-all"
+              >
+                <Plus className="w-4 h-4" /> Ajouter une question
+              </button>
+            </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="doc-thumbnail">Thumbnail Image (Optional)</Label>
-                    <Input id="doc-thumbnail" type="file" accept="image/*" />
-                  </div>
+            <SectionCard icon={Globe} iconBg="bg-emerald-100" title="Visibilité" description="Choisissez qui pourra voir ce quiz">
+              <VisibilityToggle value={visibility} onChange={setVisibility} />
+            </SectionCard>
 
-                  <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                      Upload Document
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => router.push('/teacher')}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <FormActions submitLabel="Publier le quiz" onCancel={() => router.push('/teacher')} />
+          </form>
+        )}
 
-          {/* Quiz Form */}
-          <TabsContent value="quiz">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Quiz</CardTitle>
-                <CardDescription>Test student knowledge with interactive quizzes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="quiz-title">Quiz Title *</Label>
-                    <Input
-                      id="quiz-title"
-                      placeholder="e.g., Python Fundamentals Quiz"
-                      value={quizTitle}
-                      onChange={(e) => setQuizTitle(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="quiz-description">Description *</Label>
-                    <Textarea
-                      id="quiz-description"
-                      placeholder="What topics does this quiz cover?"
-                      rows={3}
-                      value={quizDescription}
-                      onChange={(e) => setQuizDescription(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="quiz-category">Category *</Label>
-                      <Select value={quizCategory} onValueChange={setQuizCategory}>
-                        <SelectTrigger id="quiz-category">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="programming">Programming</SelectItem>
-                          <SelectItem value="mathematics">Mathematics</SelectItem>
-                          <SelectItem value="science">Science</SelectItem>
-                          <SelectItem value="languages">Languages</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="quiz-passing">Passing Score (%) *</Label>
-                      <Input
-                        id="quiz-passing"
-                        type="number"
-                        min="0"
-                        max="100"
-                        placeholder="70"
-                        value={quizPassingScore}
-                        onChange={(e) => setQuizPassingScore(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Questions</h3>
-                      <Button type="button" variant="outline" onClick={addQuestion}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Question
-                      </Button>
-                    </div>
-
-                    <div className="space-y-6">
-                      {questions.map((q, qIndex) => (
-                        <Card key={q.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-4">
-                              <h4 className="font-medium">Question {qIndex + 1}</h4>
-                              {questions.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeQuestion(q.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <Label>Question Text *</Label>
-                                <Input
-                                  placeholder="Enter your question"
-                                  value={q.question}
-                                  onChange={(e) => updateQuestion(q.id, 'question', e.target.value)}
-                                  required
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>Answer Options *</Label>
-                                {q.options.map((option, optIndex) => (
-                                  <div key={optIndex} className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name={`correct-${q.id}`}
-                                      checked={q.correctAnswer === optIndex}
-                                      onChange={() => updateQuestion(q.id, 'correctAnswer', optIndex)}
-                                      className="mt-1"
-                                    />
-                                    <Input
-                                      placeholder={`Option ${optIndex + 1}`}
-                                      value={option}
-                                      onChange={(e) => updateOption(q.id, optIndex, e.target.value)}
-                                      required
-                                    />
-                                  </div>
-                                ))}
-                                <p className="text-xs text-gray-500">Select the radio button for the correct answer</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                      Create Quiz
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => router.push('/teacher')}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
     </Layout>
   );

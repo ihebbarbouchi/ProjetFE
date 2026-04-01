@@ -32,7 +32,7 @@ export default function TeacherDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Tableau de bord — {user?.prenom || 'Enseignant'}</h2>
-            <p className="text-gray-600 mt-1">Gérez vos ressources et suivez la progression de vos apprenants</p>
+            <p className="text-gray-600 mt-1">Gerez vos ressources et suivez la progression de vos apprenants</p>
           </div>
           <Button
             onClick={() => router.push('/add-resource')}
@@ -69,7 +69,7 @@ export default function TeacherDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Mes ressources</CardTitle>
-                <CardDescription>Gérez vos cours, documents et quiz</CardDescription>
+                <CardDescription>Gerez vos cours, documents et quiz</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => router.push('/teacher/resources')}>

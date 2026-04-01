@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\AccountStatusChanged;
+use App\Models\Notification;
 use App\Models\Utilisateur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -39,7 +40,19 @@ class AdminController extends Controller
         $user->statut = 'active';
         $user->save();
 
-        // Envoyer un email de confirmation à l'utilisateur
+        // Notification in-app
+        try {
+            Notification::notifier(
+                $user->id,
+                'compte_valide',
+                'Compte approuvé ✅',
+                'Votre compte a été validé par l\'administrateur. Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme.'
+            );
+        } catch (\Exception $e) {
+            \Log::error('Erreur création notification approbation: ' . $e->getMessage());
+        }
+
+        // Email de confirmation
         try {
             Mail::to($user->email)->send(new AccountStatusChanged($user, 'active'));
         } catch (\Exception $e) {
@@ -83,6 +96,18 @@ class AdminController extends Controller
         $user = Utilisateur::findOrFail($id);
         $user->statut = 'pending';
         $user->save();
+
+        // Notification in-app
+        try {
+            Notification::notifier(
+                $user->id,
+                'compte_refuse',
+                'Compte en attente de validation',
+                'Votre compte a été remis en attente de validation par l\'administrateur. Vous serez notifié dès qu\'une décision sera prise.'
+            );
+        } catch (\Exception $e) {
+            \Log::error('Erreur création notification reset: ' . $e->getMessage());
+        }
 
         return response()->json(['message' => 'Statut remis en attente avec succès']);
     }

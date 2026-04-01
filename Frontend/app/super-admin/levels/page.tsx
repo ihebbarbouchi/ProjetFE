@@ -5,13 +5,14 @@ import { Layout } from '../../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Trash2, Plus, Loader2 } from 'lucide-react';
+import { Trash2, Plus, Loader2, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 
-interface Level {
-    id: number;
-    niveau: string;
+interface Level { id: number; niveau: string; }
+interface Suggestion {
+    id: number; type: string; valeur: string; statut: string;
+    proposed_by?: string; created_at: string;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
@@ -20,103 +21,134 @@ export default function AdminLevels() {
     const role = 'super-admin';
     const { token } = useAuth();
     const [levels, setLevels] = useState<Level[]>([]);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [newLevelName, setNewLevelName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editId, setEditId] = useState<number | null>(null);
+    const [editValue, setEditValue] = useState('');
 
-    const fetchLevels = async () => {
-        try {
-            setIsLoading(true);
-            const response = await fetch(`${API_URL}/admin/niveaux`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setLevels(data);
-            } else {
-                toast.error('Erreur lors du chargement des niveaux');
-            }
-        } catch (error) {
-            console.error('Error fetching levels:', error);
-            toast.error('Erreur de connexion au serveur');
-        } finally {
-            setIsLoading(false);
-        }
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
     };
 
-    useEffect(() => {
-        fetchLevels();
-    }, []);
+    const fetchAll = async () => {
+        setIsLoading(true);
+        try {
+            const [lvlRes, sugRes] = await Promise.all([
+                fetch(`${API_URL}/admin/niveaux`, { headers }),
+                fetch(`${API_URL}/admin/suggestions?type=niveau`, { headers }),
+            ]);
+            if (lvlRes.ok) setLevels(await lvlRes.json());
+            if (sugRes.ok) setSuggestions(await sugRes.json());
+        } catch { toast.error('Erreur de connexion'); }
+        finally { setIsLoading(false); }
+    };
+
+    useEffect(() => { fetchAll(); }, []);
 
     const handleAddLevel = async () => {
         if (!newLevelName.trim()) return;
-
+        setIsSubmitting(true);
         try {
-            setIsSubmitting(true);
-            const response = await fetch(`${API_URL}/admin/niveaux`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    niveau: newLevelName.trim()
-                })
+            const res = await fetch(`${API_URL}/admin/niveaux`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ niveau: newLevelName.trim() }),
             });
-
-            if (response.ok) {
-                toast.success('Niveau ajouté avec succès');
-                setNewLevelName('');
-                fetchLevels(); // Refresh list
-            } else {
-                toast.error('Erreur lors de l\'ajout du niveau');
-            }
-        } catch (error) {
-            console.error('Error adding level:', error);
-            toast.error('Erreur de connexion au serveur');
-        } finally {
-            setIsSubmitting(false);
-        }
+            if (res.ok) { toast.success('Niveau ajouté !'); setNewLevelName(''); fetchAll(); }
+            else { const e = await res.json(); toast.error(e.message ?? 'Erreur'); }
+        } catch { toast.error('Erreur de connexion'); }
+        finally { setIsSubmitting(false); }
     };
 
     const handleDeleteLevel = async (id: number) => {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer ce niveau ?')) return;
-
+        if (!confirm('Supprimer ce niveau ?')) return;
         try {
-            const response = await fetch(`${API_URL}/admin/niveaux/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                }
-            });
-
-            if (response.ok) {
-                toast.success('Niveau supprimé avec succès');
-                fetchLevels(); // Refresh list
-            } else {
-                toast.error('Erreur lors de la suppression');
-            }
-        } catch (error) {
-            console.error('Error deleting level:', error);
-            toast.error('Erreur de connexion au serveur');
-        }
+            const res = await fetch(`${API_URL}/admin/niveaux/${id}`, { method: 'DELETE', headers });
+            if (res.ok) { toast.success('Niveau supprimé.'); fetchAll(); }
+            else toast.error('Erreur lors de la suppression');
+        } catch { toast.error('Erreur de connexion'); }
     };
+
+    const acceptSuggestion = async (id: number) => {
+        const res = await fetch(`${API_URL}/admin/suggestions/${id}/accept`, { method: 'POST', headers });
+        if (res.ok) { toast.success('Suggestion acceptée — niveau créé !'); fetchAll(); }
+        else toast.error('Erreur');
+    };
+
+    const refuseSuggestion = async (id: number) => {
+        const res = await fetch(`${API_URL}/admin/suggestions/${id}/refuse`, { method: 'POST', headers });
+        if (res.ok) { toast.success('Suggestion refusée.'); fetchAll(); }
+        else toast.error('Erreur');
+    };
+
+    const updateSuggestion = async (id: number) => {
+        const res = await fetch(`${API_URL}/admin/suggestions/${id}`, {
+            method: 'PATCH', headers, body: JSON.stringify({ valeur: editValue }),
+        });
+        if (res.ok) { toast.success('Suggestion mise à jour.'); setEditId(null); fetchAll(); }
+        else toast.error('Erreur');
+    };
+
+    const pendingSuggestions = suggestions.filter(s => s.statut === 'pending');
 
     return (
         <Layout role={role}>
             <div className="max-w-5xl mx-auto space-y-8">
-                {/* Header Section */}
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Niveaux</h1>
-                    <p className="text-gray-500 mt-2">
-                        Gérer les niveaux d'apprentissage disponibles sur la plateforme
-                    </p>
+                    <p className="text-gray-500 mt-2">Gérer les niveaux d'apprentissage et les suggestions des enseignants</p>
                 </div>
+
+                {/* Suggestions */}
+                {pendingSuggestions.length > 0 && (
+                    <Card className="border border-amber-100 shadow-sm bg-amber-50/30 rounded-xl">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
+                                Propositions des enseignants ({pendingSuggestions.length})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {pendingSuggestions.map(s => (
+                                    <div key={s.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-amber-100">
+                                        {editId === s.id ? (
+                                            <div className="flex gap-2 flex-1 mr-3">
+                                                <Input value={editValue} onChange={e => setEditValue(e.target.value)} className="h-9 text-sm" />
+                                                <Button size="sm" onClick={() => updateSuggestion(s.id)} className="bg-violet-600 h-9">Sauver</Button>
+                                                <Button size="sm" variant="outline" onClick={() => setEditId(null)} className="h-9">Annuler</Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-900">{s.valeur}</p>
+                                                <p className="text-xs text-gray-400 mt-0.5">par {s.proposed_by ?? 'Inconnu'}</p>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2 shrink-0">
+                                            {editId !== s.id && (
+                                                <Button size="sm" variant="outline" onClick={() => { setEditId(s.id); setEditValue(s.valeur); }}
+                                                    className="h-8 px-3 text-xs text-gray-600 border-gray-200">
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </Button>
+                                            )}
+                                            <Button size="sm" onClick={() => acceptSuggestion(s.id)}
+                                                className="bg-emerald-500 hover:bg-emerald-600 text-white h-8 px-3 text-xs gap-1">
+                                                <CheckCircle className="w-3.5 h-3.5" /> Accepter
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => refuseSuggestion(s.id)}
+                                                className="text-red-500 border-red-100 hover:bg-red-50 h-8 px-3 text-xs gap-1">
+                                                <XCircle className="w-3.5 h-3.5" /> Refuser
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Add Level Card */}
                 <Card className="border border-gray-100 shadow-sm bg-white rounded-xl">
@@ -134,7 +166,7 @@ export default function AdminLevels() {
                                     value={newLevelName}
                                     onChange={(e) => setNewLevelName(e.target.value)}
                                     className="bg-[#f8f9fc] border border-gray-100 focus-visible:ring-1 focus-visible:ring-violet-500 h-11 rounded-lg"
-                                    onKeyPress={(e) => e.key === 'Enter' && handleAddLevel()}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddLevel()}
                                 />
                                 <Button
                                     onClick={handleAddLevel}

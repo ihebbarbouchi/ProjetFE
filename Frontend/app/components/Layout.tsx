@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useRef, useEffect } from 'react';
+import { ReactNode, useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -38,15 +38,40 @@ interface LayoutProps {
 export function Layout({ children, role, onSearch }: LayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [sidebarOpen, setSidebarOpen]               = useState(false);
+  const [searchQuery, setSearchQuery]               = useState('');
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount]               = useState(0);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef      = useRef<HTMLDivElement>(null);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
+
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/notifications/unread-count', {
+        headers: {
+          Authorization: `Bearer ${token || localStorage.getItem('auth_token')}`,
+          Accept: 'application/json',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.count ?? 0);
+      }
+    } catch {
+      // silently ignore – badge stays at last value
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60_000); // poll every 60 s
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   // ── Fermer dropdowns au clic extérieur ────────────────────
   useEffect(() => {
@@ -251,8 +276,19 @@ export function Layout({ children, role, onSearch }: LayoutProps) {
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
 
             {/* 🔔 Notifications */}
-            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-gray-500 hover:text-gray-700"
+              onClick={() => { setUnreadCount(0); navigateTo('/notifacations'); }}
+              title="Notifications"
+            >
               <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none shadow-sm">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Button>
 
             {/* ⚙️ Paramètres (super-admin uniquement) */}

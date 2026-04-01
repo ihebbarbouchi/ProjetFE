@@ -5,13 +5,14 @@ import { Layout } from '../../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Trash2, Loader2, FolderOpen, Plus } from 'lucide-react';
+import { Trash2, Loader2, FolderOpen, Plus, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 
-interface ResourceType {
-    id: number;
-    type_ressource: string;
+interface ResourceType { id: number; type_ressource: string; }
+interface Suggestion {
+    id: number; type: string; valeur: string; statut: string;
+    proposed_by?: string; created_at: string;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
@@ -20,111 +21,136 @@ export default function AdminResourceTypes() {
     const role = 'super-admin';
     const { token } = useAuth();
     const [types, setTypes] = useState<ResourceType[]>([]);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [newTypeName, setNewTypeName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editId, setEditId] = useState<number | null>(null);
+    const [editValue, setEditValue] = useState('');
 
-    const fetchResourceTypes = async () => {
-        try {
-            setIsLoading(true);
-            const response = await fetch(`${API_URL}/admin/types-ressources`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setTypes(data);
-            } else {
-                toast.error('Erreur lors du chargement des types de ressources');
-            }
-        } catch (error) {
-            console.error('Error fetching resource types:', error);
-            toast.error('Erreur de connexion au serveur');
-        } finally {
-            setIsLoading(false);
-        }
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
     };
 
-    useEffect(() => {
-        fetchResourceTypes();
-    }, []);
+    const fetchAll = async () => {
+        setIsLoading(true);
+        try {
+            const [typRes, sugRes] = await Promise.all([
+                fetch(`${API_URL}/admin/types-ressources`, { headers }),
+                fetch(`${API_URL}/admin/suggestions?type=type_ressource`, { headers }),
+            ]);
+            if (typRes.ok) setTypes(await typRes.json());
+            if (sugRes.ok) setSuggestions(await sugRes.json());
+        } catch { toast.error('Erreur de connexion'); }
+        finally { setIsLoading(false); }
+    };
+
+    useEffect(() => { fetchAll(); }, []);
 
     const handleAddType = async () => {
-        if (!newTypeName.trim()) {
-            toast.error('Veuillez remplir le nom');
-            return;
-        }
-
+        if (!newTypeName.trim()) { toast.error('Veuillez remplir le nom'); return; }
+        setIsSubmitting(true);
         try {
-            setIsSubmitting(true);
-            const response = await fetch(`${API_URL}/admin/types-ressources`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    type_ressource: newTypeName.trim()
-                })
+            const res = await fetch(`${API_URL}/admin/types-ressources`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ type_ressource: newTypeName.trim() }),
             });
-
-            if (response.ok) {
-                toast.success('Type de ressource ajouté avec succès');
-                setNewTypeName('');
-                fetchResourceTypes();
-            } else {
-                toast.error('Erreur lors de l\'ajout du type');
-            }
-        } catch (error) {
-            console.error('Error adding resource type:', error);
-            toast.error('Erreur de connexion au serveur');
-        } finally {
-            setIsSubmitting(false);
-        }
+            if (res.ok) { toast.success('Type ajouté !'); setNewTypeName(''); fetchAll(); }
+            else toast.error('Erreur lors de l\'ajout');
+        } catch { toast.error('Erreur de connexion'); }
+        finally { setIsSubmitting(false); }
     };
 
     const handleDeleteType = async (id: number) => {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer ce type de ressource ?')) return;
-
+        if (!confirm('Supprimer ce type de ressource ?')) return;
         try {
-            const response = await fetch(`${API_URL}/admin/types-ressources/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                }
-            });
-
-            if (response.ok) {
-                toast.success('Type de ressource supprimé avec succès');
-                fetchResourceTypes();
-            } else {
-                toast.error('Erreur lors de la suppression');
-            }
-        } catch (error) {
-            console.error('Error deleting resource type:', error);
-            toast.error('Erreur de connexion au serveur');
-        }
+            const res = await fetch(`${API_URL}/admin/types-ressources/${id}`, { method: 'DELETE', headers });
+            if (res.ok) { toast.success('Type supprimé.'); fetchAll(); }
+            else toast.error('Erreur lors de la suppression');
+        } catch { toast.error('Erreur de connexion'); }
     };
+
+    const acceptSuggestion = async (id: number) => {
+        const res = await fetch(`${API_URL}/admin/suggestions/${id}/accept`, { method: 'POST', headers });
+        if (res.ok) { toast.success('Suggestion acceptée — type créé !'); fetchAll(); }
+        else toast.error('Erreur');
+    };
+
+    const refuseSuggestion = async (id: number) => {
+        const res = await fetch(`${API_URL}/admin/suggestions/${id}/refuse`, { method: 'POST', headers });
+        if (res.ok) { toast.success('Suggestion refusée.'); fetchAll(); }
+        else toast.error('Erreur');
+    };
+
+    const updateSuggestion = async (id: number) => {
+        const res = await fetch(`${API_URL}/admin/suggestions/${id}`, {
+            method: 'PATCH', headers, body: JSON.stringify({ valeur: editValue }),
+        });
+        if (res.ok) { toast.success('Mise à jour effectuée.'); setEditId(null); fetchAll(); }
+        else toast.error('Erreur');
+    };
+
+    const pendingSuggestions = suggestions.filter(s => s.statut === 'pending');
 
     return (
         <Layout role={role}>
             <div className="max-w-5xl mx-auto space-y-8">
-                {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Types de ressources</h1>
-                        <p className="text-gray-500 mt-1 font-medium">
-                            Gérer les formats et types de fichiers acceptés
-                        </p>
+                        <p className="text-gray-500 mt-1 font-medium">Gérer les formats et suggestions des enseignants</p>
                     </div>
                 </div>
 
-                {/* Add Type Card */}
+                {/* Suggestions */}
+                {pendingSuggestions.length > 0 && (
+                    <Card className="border border-amber-100 shadow-sm bg-amber-50/30 rounded-xl">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
+                                Propositions des enseignants ({pendingSuggestions.length})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {pendingSuggestions.map(s => (
+                                    <div key={s.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-amber-100">
+                                        {editId === s.id ? (
+                                            <div className="flex gap-2 flex-1 mr-3">
+                                                <Input value={editValue} onChange={e => setEditValue(e.target.value)} className="h-9 text-sm" />
+                                                <Button size="sm" onClick={() => updateSuggestion(s.id)} className="bg-violet-600 h-9">Sauver</Button>
+                                                <Button size="sm" variant="outline" onClick={() => setEditId(null)} className="h-9">Annuler</Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-900">{s.valeur}</p>
+                                                <p className="text-xs text-gray-400 mt-0.5">par {s.proposed_by ?? 'Inconnu'}</p>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2 shrink-0">
+                                            {editId !== s.id && (
+                                                <Button size="sm" variant="outline" onClick={() => { setEditId(s.id); setEditValue(s.valeur); }}
+                                                    className="h-8 px-3 text-xs text-gray-600 border-gray-200">
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </Button>
+                                            )}
+                                            <Button size="sm" onClick={() => acceptSuggestion(s.id)}
+                                                className="bg-emerald-500 hover:bg-emerald-600 text-white h-8 px-3 text-xs gap-1">
+                                                <CheckCircle className="w-3.5 h-3.5" /> Accepter
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => refuseSuggestion(s.id)}
+                                                className="text-red-500 border-red-100 hover:bg-red-50 h-8 px-3 text-xs gap-1">
+                                                <XCircle className="w-3.5 h-3.5" /> Refuser
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}                {/* Add Type Card */}
                 <Card className="border border-gray-100 shadow-md bg-white rounded-2xl overflow-hidden">
                     <CardHeader className="bg-gray-50/50 border-b border-gray-100">
                         <CardTitle className="text-sm font-bold text-gray-600 uppercase tracking-widest">
@@ -141,7 +167,7 @@ export default function AdminResourceTypes() {
                                         value={newTypeName}
                                         onChange={(e) => setNewTypeName(e.target.value)}
                                         className="bg-white border-gray-200 focus:ring-violet-500 focus:border-violet-500 h-12 rounded-xl transition-all"
-                                        onKeyPress={(e) => e.key === 'Enter' && handleAddType()}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddType()}
                                     />
                                 </div>
                                 <div className="md:self-end">

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\Quiz;
 use App\Models\QuizTentative;
+use App\Models\Utilisateur;
 use App\Services\DocumentTextExtractor;
 use App\Services\QuizGeneratorService;
 use Illuminate\Http\JsonResponse;
@@ -288,6 +290,24 @@ class QuizIaController extends Controller
         }
 
         $quiz->update($updateData);
+
+        // Notifier tous les étudiants actifs
+        try {
+            $students = Utilisateur::where('role', 'student')
+                ->where('statut', 'active')
+                ->pluck('id');
+
+            foreach ($students as $studentId) {
+                Notification::notifier(
+                    $studentId,
+                    'quiz_publie',
+                    'Nouveau quiz disponible 🎓',
+                    "Le quiz \"" . $quiz->titre . "\" est maintenant disponible. Testez vos connaissances et obtenez votre score !"
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Erreur notifications quiz publié: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Quiz publié avec succès.',
