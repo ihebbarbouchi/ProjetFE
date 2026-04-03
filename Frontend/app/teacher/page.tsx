@@ -178,10 +178,10 @@ export default function TeacherDashboard() {
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Voir"><Eye className="w-4 h-4 text-gray-400" /></Button>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Modifier"><Edit className="w-4 h-4 text-gray-400" /></Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleDelete(resource.id)}
                             title="Supprimer"
                           >

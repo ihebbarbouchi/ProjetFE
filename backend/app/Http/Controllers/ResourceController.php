@@ -10,6 +10,39 @@ use Illuminate\Support\Facades\Storage;
 class ResourceController extends Controller
 {
     /**
+     * List all public resources globally.
+     */
+    public function publicIndex()
+    {
+        try {
+            $resources = Resource::where('visibilite', 'public')
+                ->with(['category', 'category.level', 'category.discipline'])
+                ->latest()
+                ->get()
+                ->map(function ($resource) {
+                    $cat = $resource->category;
+                    return [
+                        'id'             => $resource->id,
+                        'titre'          => $resource->titre,
+                        'description'    => $resource->description,
+                        'type'           => $resource->type,
+                        'chemin_fichier' => $resource->chemin_fichier,
+                        'created_at'     => $resource->created_at,
+                        'category'       => $cat ? [
+                            'code'       => $cat->code,
+                            'discipline' => $cat->discipline ? ['nom' => $cat->discipline->nom] : null,
+                            'level'      => $cat->level      ? ['nom' => $cat->level->niveau]  : null,
+                        ] : null,
+                    ];
+                });
+
+            return response()->json($resources);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * List all public resources for a specific category.
      */
     public function indexByCategory($cat_id)
@@ -52,7 +85,7 @@ class ResourceController extends Controller
 
         if ($request->hasFile('fichier')) {
             $path = $request->file('fichier')->store('resources', 'public');
-            
+
             $imagePath = null;
             if ($request->hasFile('image')) {
                 $imagePath = $request->file('image')->store('resource_images', 'public');
@@ -89,10 +122,10 @@ class ResourceController extends Controller
 
         // Delete files from storage
         if ($resource->chemin_fichier) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($resource->chemin_fichier);
+            Storage::disk('public')->delete($resource->chemin_fichier);
         }
         if ($resource->image_path) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($resource->image_path);
+            Storage::disk('public')->delete($resource->image_path);
         }
 
         $resource->delete();
