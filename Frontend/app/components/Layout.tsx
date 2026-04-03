@@ -280,7 +280,7 @@ export function Layout({ children, role, onSearch }: LayoutProps) {
               variant="ghost"
               size="icon"
               className="relative text-gray-500 hover:text-gray-700"
-              onClick={() => { setUnreadCount(0); navigateTo('/notifacations'); }}
+              onClick={() => { setUnreadCount(0); navigateTo('/notifications'); }}
               title="Notifications"
             >
               <Bell className="w-5 h-5" />

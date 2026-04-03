@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { PublicLayout } from '../components/PublicLayout';
@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { Modal, ModalBody, ModalFooter, ModalConfirmButton } from '../components/ui/modal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
-export default function Login() {
+function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { login, clearSession, isAuthenticated, user, isLoading: authLoading } = useAuth();
@@ -313,5 +313,20 @@ export default function Login() {
                 </div>
             </section>
         </PublicLayout>
+    );
+}
+
+export default function Login() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600 font-medium">Chargement...</p>
+                </div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }

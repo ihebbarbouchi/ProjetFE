@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -67,8 +69,9 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.0",
     "@tailwindcss/postcss": "^4.1.12",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.15",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "tailwindcss": "4.1.12",

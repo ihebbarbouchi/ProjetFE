@@ -66,10 +66,10 @@ function RoleBadge({ role }: { role: User['role'] }) {
 
 function StatutBadge({ statut, role }: { statut: User['statut']; role: User['role'] }) {
     const map = {
-        active:   { cls: 'bg-emerald-100 text-emerald-700 border-none', label: role === 'teacher' ? 'Approuvé' : 'Actif' },
-        pending:  { cls: 'bg-amber-100 text-amber-700 border-none',     label: 'En attente' },
-        rejected: { cls: 'bg-red-100 text-red-600 border-none',         label: 'Rejeté' },
-        inactive: { cls: 'bg-gray-100 text-gray-500 border-none',       label: 'Inactif' },
+        active: { cls: 'bg-emerald-100 text-emerald-700 border-none', label: role === 'teacher' ? 'Approuvé' : 'Actif' },
+        pending: { cls: 'bg-amber-100 text-amber-700 border-none', label: 'En attente' },
+        rejected: { cls: 'bg-red-100 text-red-600 border-none', label: 'Rejeté' },
+        inactive: { cls: 'bg-gray-100 text-gray-500 border-none', label: 'Inactif' },
     };
     const { cls, label } = map[statut] ?? map.inactive;
     return <Badge className={`text-xs ${cls}`}>{label}</Badge>;
@@ -80,13 +80,13 @@ export default function UserManagement() {
     const { token } = useAuth();
 
     // ── State ────────────────────────────────────────────────────────────
-    const [users, setUsers]               = useState<User[]>([]);
-    const [isLoading, setIsLoading]       = useState(true);
-    const [error, setError]               = useState('');
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
     const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-    const [searchQuery, setSearchQuery]   = useState('');
-    const [filterRole, setFilterRole]     = useState<'all' | 'student' | 'teacher'>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterRole, setFilterRole] = useState<'all' | 'student' | 'teacher'>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'pending' | 'rejected'>('all');
 
     // Modal dossier
@@ -94,14 +94,14 @@ export default function UserManagement() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     // Modal ajouter / modifier
-    const [isAddOpen, setIsAddOpen]   = useState(false);
-    const [editUser, setEditUser]     = useState<User | null>(null);
-    const [newNom, setNewNom]         = useState('');
-    const [newPrenom, setNewPrenom]   = useState('');
-    const [newEmail, setNewEmail]     = useState('');
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [editUser, setEditUser] = useState<User | null>(null);
+    const [newNom, setNewNom] = useState('');
+    const [newPrenom, setNewPrenom] = useState('');
+    const [newEmail, setNewEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [newRole, setNewRole]       = useState<User['role']>('student');
-    const [isAdding, setIsAdding]     = useState(false);
+    const [newRole, setNewRole] = useState<User['role']>('student');
+    const [isAdding, setIsAdding] = useState(false);
 
     // ── API ──────────────────────────────────────────────────────────────
     const authHeaders = {
@@ -116,20 +116,20 @@ export default function UserManagement() {
             if (!res.ok) throw new Error();
             const data = await res.json();
             const list = (data.data ?? data).map((u: Record<string, unknown>) => ({
-                id:             u.id as number,
-                nom:            u.nom as string,
-                prenom:         u.prenom as string,
-                nom_famille:    u.nom_famille as string,
-                email:          u.email as string,
-                role:           u.role as User['role'],
-                statut:         u.statut as User['statut'],
-                joinedAt:       (u.created_at as string)?.split('T')[0] ?? '',
-                cv_path:        u.chemin_cv as string,
+                id: u.id as number,
+                nom: u.nom as string,
+                prenom: u.prenom as string,
+                nom_famille: u.nom_famille as string,
+                email: u.email as string,
+                role: u.role as User['role'],
+                statut: u.statut as User['statut'],
+                joinedAt: (u.created_at as string)?.split('T')[0] ?? '',
+                cv_path: u.chemin_cv as string,
                 motivation_path: u.chemin_motivation as string,
-                cin_path:       u.chemin_cin as string,
-                telephone:      u.telephone as string,
-                poste_actuel:   u.poste_actuel as string,
-                institution:    u.institution as string,
+                cin_path: u.chemin_cin as string,
+                telephone: u.telephone as string,
+                poste_actuel: u.poste_actuel as string,
+                institution: u.institution as string,
             }));
             setUsers(list);
         } catch {
@@ -144,8 +144,8 @@ export default function UserManagement() {
     // ── Filtre ────────────────────────────────────────────────────────────
     const filtered = users.filter(u => {
         const matchSearch = u.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            u.email.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchRole   = filterRole   === 'all' || u.role   === filterRole;
+            u.email.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchRole = filterRole === 'all' || u.role === filterRole;
         const matchStatus = filterStatus === 'all' || u.statut === filterStatus;
         return matchSearch && matchRole && matchStatus && u.role !== 'super-admin';
     });
@@ -163,7 +163,7 @@ export default function UserManagement() {
             setUsers(p => p.map(u => u.id === id ? { ...u, statut: 'active' } : u));
             toast.success('Utilisateur approuvé ✅');
         } catch { toast.error('Erreur lors de l\'approbation'); }
-        finally   { setActionLoading(null); }
+        finally { setActionLoading(null); }
     };
 
     const handleReject = async (id: number) => {
@@ -173,7 +173,7 @@ export default function UserManagement() {
             setUsers(p => p.filter(u => u.id !== id));
             toast.success('Utilisateur rejeté et supprimé');
         } catch { toast.error('Erreur lors du rejet'); }
-        finally   { setActionLoading(null); }
+        finally { setActionLoading(null); }
     };
 
 
@@ -185,7 +185,7 @@ export default function UserManagement() {
             setUsers(p => p.filter(u => u.id !== id));
             toast.success('Utilisateur supprimé');
         } catch { toast.error('Erreur lors de la suppression'); }
-        finally   { setActionLoading(null); }
+        finally { setActionLoading(null); }
     };
 
     // ── CRUD modal ────────────────────────────────────────────────────────
@@ -222,12 +222,12 @@ export default function UserManagement() {
             toast.success(editUser ? 'Utilisateur mis à jour' : 'Utilisateur créé');
             setIsAddOpen(false); resetForm(); fetchUsers();
         } catch { toast.error('Erreur de connexion'); }
-        finally   { setIsAdding(false); }
+        finally { setIsAdding(false); }
     };
 
     // ── Stats ─────────────────────────────────────────────────────────────
-    const nonAdmins    = users.filter(u => u.role !== 'super-admin');
-    const totalUsers   = nonAdmins.length;
+    const nonAdmins = users.filter(u => u.role !== 'super-admin');
+    const totalUsers = nonAdmins.length;
     const studentCount = users.filter(u => u.role === 'student').length;
     const teacherCount = users.filter(u => u.role === 'teacher').length;
     const pendingCount = users.filter(u => u.statut === 'pending').length;
@@ -255,10 +255,10 @@ export default function UserManagement() {
                 {/* ── Stats ────────────────────────────────────────────────── */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { label: 'Total',        value: totalUsers,   icon: Users,         color: 'violet' },
-                        { label: 'Apprenants',   value: studentCount, icon: GraduationCap, color: 'blue'   },
-                        { label: 'Enseignants',  value: teacherCount, icon: UserCheck,     color: 'emerald'},
-                        { label: 'En attente',   value: pendingCount, icon: Clock,         color: 'amber'  },
+                        { label: 'Total', value: totalUsers, icon: Users, color: 'violet' },
+                        { label: 'Apprenants', value: studentCount, icon: GraduationCap, color: 'blue' },
+                        { label: 'Enseignants', value: teacherCount, icon: UserCheck, color: 'emerald' },
+                        { label: 'En attente', value: pendingCount, icon: Clock, color: 'amber' },
                     ].map((s, i) => (
                         <Card key={i} className="rounded-2xl border-none shadow-sm bg-white overflow-hidden hover:shadow-md transition-all group">
                             <CardContent className="p-5 relative">
@@ -596,9 +596,9 @@ export default function UserManagement() {
                                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Informations du profil</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     {[
-                                        { label: 'Téléphone',     value: selectedUser.telephone,   icon: Smartphone },
-                                        { label: 'Institution',    value: selectedUser.institution,  icon: Building   },
-                                        { label: 'Poste actuel',  value: selectedUser.poste_actuel, icon: Briefcase  },
+                                        { label: 'Téléphone', value: selectedUser.telephone, icon: Smartphone },
+                                        { label: 'Institution', value: selectedUser.institution, icon: Building },
+                                        { label: 'Poste actuel', value: selectedUser.poste_actuel, icon: Briefcase },
                                     ].map((info, i) => (
                                         <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                                             <div className="flex items-center gap-2 mb-1.5">
@@ -625,9 +625,9 @@ export default function UserManagement() {
                                 ) : (
                                     <div className="space-y-2">
                                         {[
-                                            { path: selectedUser.cv_path,           label: 'Curriculum Vitae',   icon: FileText,   color: 'violet' },
-                                            { path: selectedUser.motivation_path,   label: 'Lettre de motivation', icon: FileText, color: 'blue'   },
-                                            { path: selectedUser.cin_path,          label: "Pièce d'identité",   icon: ShieldCheck,color: 'emerald' },
+                                            { path: selectedUser.cv_path, label: 'Curriculum Vitae', icon: FileText, color: 'violet' },
+                                            { path: selectedUser.motivation_path, label: 'Lettre de motivation', icon: FileText, color: 'blue' },
+                                            { path: selectedUser.cin_path, label: "Pièce d'identité", icon: ShieldCheck, color: 'emerald' },
                                         ].filter(d => !!d.path).map((doc, i) => (
                                             <a
                                                 key={i}

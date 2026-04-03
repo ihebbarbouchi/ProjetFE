@@ -18,11 +18,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
             if (!isAuthenticated) {
                 // Not logged in → redirect to login
                 router.replace('/');
-            } else if (user && (user.status === 'rejected')) {
+            } else if (user && (user.statut === 'rejected')) {
                 // Account rejected → logout and redirect
                 logout();
                 router.replace('/login');
-            } else if (user && user.status === 'pending') {
+            } else if (user && user.statut === 'pending') {
                 // Account pending → redirect to login to show message
                 router.replace('/login');
             } else if (user && !allowedRoles.includes(user.role)) {
