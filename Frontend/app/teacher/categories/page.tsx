@@ -111,10 +111,10 @@ export default function TeacherCategories() {
             const formData = new FormData();
             formData.append('code', code.toUpperCase());
             formData.append('description', description);
-            
+
             selectedTypes.forEach(id => formData.append('types[]', String(id)));
             customTypes.filter(t => t.trim() !== '').forEach(t => formData.append('custom_types[]', t));
-            
+
             if (disciplineId && disciplineId !== 'other') formData.append('discipline_id', disciplineId);
             else formData.append('custom_discipline', customDiscipline.trim());
 
@@ -126,8 +126,8 @@ export default function TeacherCategories() {
             }
 
             const res = await fetch(`${API_URL}/suggest-category`, {
-                method: 'POST', 
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }, 
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData,
             });
             if (res.ok) {
@@ -152,7 +152,7 @@ export default function TeacherCategories() {
 
     const statusBadge = (statut: string) => {
         if (statut === 'approved') return <Badge className="bg-emerald-100 text-emerald-700 border-none text-xs">Approuvée</Badge>;
-        if (statut === 'pending')  return <Badge className="bg-amber-100 text-amber-700 border-none text-xs">En attente</Badge>;
+        if (statut === 'pending') return <Badge className="bg-emerald-100 text-emerald-600 border-none text-xs">En attente</Badge>;
         return <Badge className="bg-red-100 text-red-700 border-none text-xs">Refusée</Badge>;
     };
 
@@ -175,20 +175,23 @@ export default function TeacherCategories() {
                 </div>
 
                 {/* Stat cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
-                        { label: 'Total',       value: categories.length,                                             icon: FolderOpen,    color: 'emerald', bg: 'emerald'  },
-                        { label: 'Approuvées',  value: categories.filter(c => c.statut === 'approved').length,        icon: CheckCircle,   color: 'emerald', bg: 'emerald' },
-                        { label: 'En attente',  value: categories.filter(c => c.statut === 'pending').length,         icon: Clock,         color: 'amber',   bg: 'amber'   },
+                        { label: 'Total', value: categories.length, icon: FolderOpen, color: 'emerald', bg: 'emerald' },
+                        { label: 'Approuvées', value: categories.filter(c => c.statut === 'approved').length, icon: CheckCircle, color: 'emerald', bg: 'emerald' },
+                        { label: 'En attente', value: categories.filter(c => c.statut === 'pending').length, icon: Clock, color: 'emerald', bg: 'emerald' },
                     ].map(s => (
                         <Card key={s.label} className="rounded-2xl border-none shadow-sm bg-white overflow-hidden group hover:shadow-md transition-all">
-                            <CardContent className="p-6 relative">
-                                <div className={`absolute top-0 right-0 w-20 h-20 bg-${s.bg}-50 rounded-bl-full -mr-10 -mt-10 group-hover:bg-${s.bg}-100 transition-colors`} />
-                                <div className={`w-10 h-10 rounded-xl bg-${s.bg}-100 flex items-center justify-center mb-3`}>
-                                    <s.icon className={`w-5 h-5 text-${s.color}-600`} />
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{s.label}</p>
+                                        <p className={`text-2xl font-bold text-${s.color}-600`}>{s.value}</p>
+                                    </div>
+                                    <div className={`w-12 h-12 rounded-2xl bg-${s.bg}-50 flex items-center justify-center group-hover:bg-${s.bg}-100 transition-colors`}>
+                                        <s.icon className={`w-6 h-6 text-${s.color}-600`} />
+                                    </div>
                                 </div>
-                                <p className="text-sm font-medium text-gray-500 mb-1">{s.label}</p>
-                                <p className={`text-4xl font-black text-${s.color}-600 tracking-tight`}>{s.value}</p>
                             </CardContent>
                         </Card>
                     ))}
@@ -197,18 +200,17 @@ export default function TeacherCategories() {
                 {/* Filter */}
                 <div className="flex gap-2">
                     {[
-                        { key: 'all',      label: 'Toutes',     activeClass: 'bg-emerald-600 text-white shadow' },
+                        { key: 'all', label: 'Toutes', activeClass: 'bg-emerald-600 text-white shadow' },
                         { key: 'approved', label: 'Approuvées', activeClass: 'bg-emerald-600 text-white shadow' },
-                        { key: 'pending',  label: 'En attente', activeClass: 'bg-amber-500 text-white shadow'   },
+                        { key: 'pending', label: 'En attente', activeClass: 'bg-emerald-600 text-white shadow' },
                     ].map(f => (
                         <button
                             key={f.key}
                             onClick={() => setStatusFilter(f.key)}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                                statusFilter === f.key
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${statusFilter === f.key
                                     ? f.activeClass
                                     : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
-                            }`}
+                                }`}
                         >
                             {f.label}
                         </button>
@@ -243,13 +245,12 @@ export default function TeacherCategories() {
                                 {filtered.map(cat => (
                                     <div key={cat.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/60 transition-colors">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                                cat.statut === 'approved' ? 'bg-emerald-100' :
-                                                cat.statut === 'pending'  ? 'bg-amber-100'   : 'bg-red-100'
-                                            }`}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.statut === 'approved' ? 'bg-emerald-100' :
+                                                    cat.statut === 'pending' ? 'bg-emerald-50' : 'bg-red-100'
+                                                }`}>
                                                 {cat.statut === 'approved' ? <CheckCircle className="w-5 h-5 text-emerald-600" /> :
-                                                 cat.statut === 'pending'  ? <Clock        className="w-5 h-5 text-amber-500"   /> :
-                                                                             <XCircle       className="w-5 h-5 text-red-500"     />}
+                                                    cat.statut === 'pending' ? <Clock className="w-5 h-5 text-emerald-500" /> :
+                                                        <XCircle className="w-5 h-5 text-red-500" />}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-gray-900 text-sm">{cat.code}</p>
@@ -378,26 +379,26 @@ export default function TeacherCategories() {
                             {/* Photo de catégorie */}
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-bold text-gray-400 uppercase ml-1">Photo d'illustration</Label>
-                                <div 
+                                <div
                                     onClick={() => imageInputRef.current?.click()}
                                     className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all ${selectedImage ? 'border-emerald-400 bg-emerald-50/30' : 'border-gray-100 bg-gray-50/50 hover:border-emerald-200'}`}
                                 >
-                                    <input 
-                                        type="file" 
-                                        ref={imageInputRef} 
+                                    <input
+                                        type="file"
+                                        ref={imageInputRef}
                                         onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
-                                        accept="image/*" 
-                                        className="hidden" 
+                                        accept="image/*"
+                                        className="hidden"
                                     />
                                     {selectedImage ? (
                                         <div className="flex items-center gap-3 w-full">
-                                            <img 
-                                                src={URL.createObjectURL(selectedImage)} 
-                                                alt="Preview" 
-                                                className="w-12 h-12 rounded-lg object-cover" 
+                                            <img
+                                                src={URL.createObjectURL(selectedImage)}
+                                                alt="Preview"
+                                                className="w-12 h-12 rounded-lg object-cover"
                                             />
                                             <span className="text-xs text-emerald-600 font-bold truncate flex-1">{selectedImage.name}</span>
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
                                                 className="p-1 hover:bg-white rounded-full text-emerald-400"
                                             >

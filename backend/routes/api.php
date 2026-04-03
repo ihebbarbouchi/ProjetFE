@@ -29,6 +29,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // ── Routes publiques (sans authentification) ──────────────────────────────
 Route::get('/public/categories', [CategoryController::class, 'index']);
+Route::get('/public/resources', 'App\Http\Controllers\ResourceController@publicIndex');
 Route::get('/public/resources/category/{cat_id}', 'App\Http\Controllers\ResourceController@indexByCategory');
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -52,30 +53,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/approve-teacher/{id}', [AdminController::class, 'approveTeacher']);
         Route::post('/reject-teacher/{id}', [AdminController::class, 'rejectTeacher']);
         Route::post('/reset-teacher/{id}', [AdminController::class, 'resetTeacher']);
-        
+
         Route::post('/create-user', [AdminController::class, 'createUser']);
         Route::post('/update-user/{id}', [AdminController::class, 'updateUser']);
-        
+
         // Resource Types
         Route::apiResource('types-ressources', TypeRessourceController::class);
-        
+
         // Disciplines
         Route::apiResource('disciplines', DisciplineController::class);
-        
+
         // Niveaux
         Route::apiResource('niveaux', NiveauController::class);
 
         // Catégories (admin)
-        Route::post('/categories',            [CategoryController::class, 'store']);
+        Route::post('/categories', [CategoryController::class, 'store']);
         Route::post('/approve-category/{id}', [CategoryController::class, 'approve']);
-        Route::post('/reject-category/{id}',  [CategoryController::class, 'reject']);
-        Route::delete('/categories/{id}',     [CategoryController::class, 'destroy']);
+        Route::post('/reject-category/{id}', [CategoryController::class, 'reject']);
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
         // Suggestions (admin)
-        Route::get('/suggestions',            [SuggestionController::class, 'index']);
+        Route::get('/suggestions', [SuggestionController::class, 'index']);
         Route::post('/suggestions/{id}/accept', [SuggestionController::class, 'accept']);
         Route::post('/suggestions/{id}/refuse', [SuggestionController::class, 'refuse']);
-        Route::patch('/suggestions/{id}',     [SuggestionController::class, 'update']);
+        Route::patch('/suggestions/{id}', [SuggestionController::class, 'update']);
     });
 
     // ── Catégories ────────────────────────────────────────────────────────
@@ -86,41 +87,41 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Quiz ─────────────────────────────────────────────────────────────
     Route::prefix('quiz')->group(function () {
         // Routes fixes (avant les routes paramétrées pour éviter les conflits)
-        Route::post('/generer',              [QuizIaController::class, 'generer']);
-        Route::post('/import-json',          [QuizIaController::class, 'importJson']);
-        Route::get('/',                      [QuizIaController::class, 'index']);
-        Route::get('/publies',               [QuizIaController::class, 'listerPublies']);
-        Route::get('/public/code/{code}',    [QuizIaController::class, 'showPublicByCode']);
-        Route::get('/public/{slug}',         [QuizIaController::class, 'showPublic']);
+        Route::post('/generer', [QuizIaController::class, 'generer']);
+        Route::post('/import-json', [QuizIaController::class, 'importJson']);
+        Route::get('/', [QuizIaController::class, 'index']);
+        Route::get('/publies', [QuizIaController::class, 'listerPublies']);
+        Route::get('/public/code/{code}', [QuizIaController::class, 'showPublicByCode']);
+        Route::get('/public/{slug}', [QuizIaController::class, 'showPublic']);
         Route::post('/public/{slug}/soumettre', [QuizIaController::class, 'soumettre']);
 
         // Routes paramétrées par ID en dernier
-        Route::get('/{id}',                  [QuizIaController::class, 'show']);
-        Route::put('/{id}',                  [QuizIaController::class, 'update']);
-        Route::put('/{id}/questions',        [QuizIaController::class, 'syncQuestions']);
-        Route::put('/{id}/publier',          [QuizIaController::class, 'publier']);
-        Route::put('/{id}/archiver',         [QuizIaController::class, 'archiver']);
-        Route::delete('/{id}',               [QuizIaController::class, 'destroy']);
-        Route::get('/{id}/statistiques',     [QuizIaController::class, 'statistiques']);
+        Route::get('/{id}', [QuizIaController::class, 'show']);
+        Route::put('/{id}', [QuizIaController::class, 'update']);
+        Route::put('/{id}/questions', [QuizIaController::class, 'syncQuestions']);
+        Route::put('/{id}/publier', [QuizIaController::class, 'publier']);
+        Route::put('/{id}/archiver', [QuizIaController::class, 'archiver']);
+        Route::delete('/{id}', [QuizIaController::class, 'destroy']);
+        Route::get('/{id}/statistiques', [QuizIaController::class, 'statistiques']);
     });
 
     // ── QCM Bibliothèque ─────────────────────────────────────────────────
     Route::prefix('qcm-bibliotheque')->group(function () {
-        Route::get('/meta',           [QcmBibliothequeController::class, 'meta']);
-        Route::get('/',               [QcmBibliothequeController::class, 'index']);
-        Route::post('/',              [QcmBibliothequeController::class, 'store']);
-        Route::get('/{id}',           [QcmBibliothequeController::class, 'show']);
-        Route::delete('/{id}',        [QcmBibliothequeController::class, 'destroy']);
+        Route::get('/meta', [QcmBibliothequeController::class, 'meta']);
+        Route::get('/', [QcmBibliothequeController::class, 'index']);
+        Route::post('/', [QcmBibliothequeController::class, 'store']);
+        Route::get('/{id}', [QcmBibliothequeController::class, 'show']);
+        Route::delete('/{id}', [QcmBibliothequeController::class, 'destroy']);
         Route::post('/{id}/importer', [QcmBibliothequeController::class, 'importer']);
     });
 
     // ── Notifications ─────────────────────────────────────────────────────
     Route::prefix('notifications')->group(function () {
-        Route::get('/unread-count',  [NotificationController::class, 'unreadCount']);
-        Route::patch('/read-all',    [NotificationController::class, 'markAllAsRead']);
-        Route::get('/',              [NotificationController::class, 'index']);
-        Route::patch('/{id}/read',   [NotificationController::class, 'markAsRead']);
-        Route::delete('/{id}',       [NotificationController::class, 'destroy']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
     });
 
     // ── Resources ────────────────────────────────────────────────────────
